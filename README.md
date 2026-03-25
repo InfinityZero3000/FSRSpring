@@ -71,10 +71,32 @@ Build and run with Docker Compose:
 docker compose up --build
 ```
 
+This starts 2 services:
+- `mysql` (MySQL 8.4, host port `3307`)
+- `app` (Spring Boot on `8080`, profile `docker`)
+
+Default MySQL credentials used by Docker Compose:
+- Database: `fsrspring`
+- Username: `fsr_user`
+- Password: `fsr_pass`
+- Root password: `rootpass`
+
+Quick DB check from host:
+
+```bash
+mysql -h 127.0.0.1 -P 3307 -u fsr_user -pfsr_pass -e "SHOW DATABASES;"
+```
+
 Stop containers:
 
 ```bash
 docker compose down
+```
+
+To remove database data volume as well:
+
+```bash
+docker compose down -v
 ```
 
 If your Docker setup still uses the legacy command, replace `docker compose` with `docker-compose`.
