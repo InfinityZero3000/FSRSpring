@@ -68,12 +68,16 @@ Windows PowerShell:
 Build and run with Docker Compose:
 
 ```bash
+cp .env.example .env
 docker compose up --build
 ```
 
 This starts 2 services:
 - `mysql` (MySQL 8.4, host port `3307`)
 - `app` (Spring Boot on `8080`, profile `docker`)
+
+Environment variables are loaded from `.env`.
+Use `.env.example` as the template and adjust values for your machine before running Docker Compose.
 
 Default MySQL credentials used by Docker Compose:
 - Database: `fsrspring`

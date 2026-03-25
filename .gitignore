@@ -38,3 +38,7 @@ target/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local environment files
+.env
+.env.local
