@@ -130,3 +130,55 @@ src/main/java/com/fsrspring/vocab
 src/main/resources
 src/test/java/com/fsrspring/vocab
 ```
+
+## Modular Monolith Structure
+
+Source packages are now split by business module instead of layer-only folders:
+
+```text
+src/main/java/com/fsrspring/vocab
+	platform/core
+	wordmanagement/{api,controller,service,repository,model}
+	reviewscheduling/{api,controller,service,repository,model}
+	learningsession/
+		quiz/{controller,service,repository,model}
+		content/{controller,service,repository,model}
+		flashcard/{controller,service,repository,model}
+	progressanalytics/{controller,service,repository,model}
+```
+
+Cross-module communication should use service interfaces in module `api` packages.
+
+## API Namespaces (Backend)
+
+- Word management: `/api/word-management/words`
+- Review scheduling (FSRS): `/api/review-scheduling/fsrs`
+- Learning session quiz: `/api/learning-session/quiz`
+- Learning content: `/api/learning-session/content`
+- Learning flashcards: `/api/learning-session/flashcards`
+- Progress analytics: `/api/progress-analytics/progress`
+- Notifications: `/api/progress-analytics/notifications`
+
+Note: frontend routes and scripts may need to be updated to match these module-based API paths.
+
+## FSRS Review Flow
+
+- Review endpoint: `POST /api/review-scheduling/fsrs/review`
+- Required params:
+	- `wordId`: vocabulary ID
+	- `rating`: accepts `AGAIN|HARD|GOOD|EASY` or numeric `1|2|3|4`
+	- `responseMs` (optional)
+
+Flow behavior:
+
+- New/learning cards move through short learning steps, then transition to review scheduling.
+- `AGAIN` in review transitions card to relearning with short delay.
+- FSRS DSR state (`difficulty`, `stability`, `retrievability`) is updated on each review.
+- Each review writes an immutable `review_events` row with before/after scheduling state.
+
+Notification integration:
+
+- Scheduled reminder (`REVIEW_REMINDER`) is sent only when due cards exist and not recently sent.
+- Review outcome notifications:
+	- `FSRS_LAPSE` when rating is `AGAIN`
+	- `FSRS_MASTERY` when a word reaches `MASTERED`
