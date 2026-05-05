@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/css/style.css">
     <script src="/webjars/lucide/dist/umd/lucide.min.js"></script>
 </head>
@@ -88,7 +88,7 @@
 
     <!-- Progress Bar -->
     <div style="height:4px;background:var(--bg-elevated);border-radius:9999px;margin-bottom:1.5rem;overflow:hidden;">
-        <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--primary),#0891b2);border-radius:9999px;transition:width 0.5s ease;"></div>
+        <div id="progressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--primary),#6366f1);border-radius:9999px;transition:width 0.5s ease;"></div>
     </div>
 
     <!-- Flashcard -->
@@ -106,7 +106,7 @@
 
             <!-- Back -->
             <div class="flashcard-back">
-                <p style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:rgba(45,212,191,0.7);margin-bottom:0.5rem;font-weight:700;">Meaning</p>
+                <p style="font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:rgba(129,140,248,0.7);margin-bottom:0.5rem;font-weight:700;">Meaning</p>
                 <h2 id="cardBack" class="font-display" style="font-size:2.5rem;font-weight:800;color:var(--text);letter-spacing:-0.02em;"></h2>
                 <p id="cardExample" style="margin-top:1rem;font-size:0.875rem;color:rgba(226,232,240,0.7);font-style:italic;max-width:380px;"></p>
             </div>
@@ -124,9 +124,29 @@
     </div>
 
     <!-- Rate Buttons -->
-    <div id="rateButtons" class="hidden" style="margin-top:1.25rem;display:flex;justify-content:center;gap:0.75rem;flex-wrap:wrap;">
-        <button onclick="rateCard(false)" class="btn-again">↺ Again</button>
-        <button onclick="rateCard(true)" class="btn-good">✓ Good</button>
+    <div id="rateButtons" class="hidden" style="margin-top:1.25rem;">
+        <div class="rating-group" role="group" aria-label="Rate your recall">
+            <button onclick="rateCard(1)" class="btn-again" aria-label="Again – review soon">
+                Again
+                <span class="rating-interval">&lt; 1 day</span>
+                <span class="rating-key">[1]</span>
+            </button>
+            <button onclick="rateCard(2)" class="btn-hard" aria-label="Hard">
+                Hard
+                <span class="rating-interval">~2 days</span>
+                <span class="rating-key">[2]</span>
+            </button>
+            <button onclick="rateCard(3)" class="btn-good" aria-label="Good">
+                Good
+                <span class="rating-interval">~5 days</span>
+                <span class="rating-key">[3]</span>
+            </button>
+            <button onclick="rateCard(4)" class="btn-easy" aria-label="Easy">
+                Easy
+                <span class="rating-interval">~2 weeks</span>
+                <span class="rating-key">[4]</span>
+            </button>
+        </div>
     </div>
 
     <!-- End Session -->
