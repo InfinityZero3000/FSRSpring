@@ -7,6 +7,7 @@ let correctCount = 0;
 let incorrectCount = 0;
 let allWords = [];
 let quizType = 'en-vi';
+let questionStartTime = 0;
 
 function escapeHtml(text) {
     if (!text) return '';
@@ -128,6 +129,7 @@ function showQuestion() {
     // Hide feedback and next button
     document.getElementById('feedback').classList.add('hidden');
     document.getElementById('nextBtn').classList.add('hidden');
+    questionStartTime = Date.now();
 }
 
 function selectOption(btn, index) {
@@ -177,7 +179,7 @@ function selectOption(btn, index) {
         fetch(`/api/quiz/session/${sessionId}/answer?wordId=${q.word.id}&correct=${isCorrect}`, { method: 'POST' })
             .catch(e => console.error(e));
     }
-    fetch(`/api/fsrs/review?wordId=${q.word.id}&rating=${isCorrect ? 3 : 1}&responseMs=0`, { method: 'POST' })
+    fetch(`/api/fsrs/review?wordId=${q.word.id}&rating=${isCorrect ? 3 : 1}&responseMs=${Date.now() - questionStartTime}`, { method: 'POST' })
         .catch(e => console.error(e));
 
     // Show next button (or finish)

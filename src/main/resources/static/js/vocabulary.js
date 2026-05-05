@@ -121,7 +121,7 @@ function renderWords(words) {
             ${w.example ? `<p class="text-gray-400 text-sm italic mb-3 line-clamp-2">"${escapeHtml(w.example)}"</p>` : '<div class="mb-3"></div>'}
             <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px;">
               ${w.category  ? `<span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">${escapeHtml(w.category)}</span>` : ''}
-              ${w.topic     ? `<span style="font-size:.7rem;background:rgba(45,212,191,.1);color:#2dd4bf;padding:2px 8px;border-radius:99px;font-weight:600;">${escapeHtml((w.topic.iconEmoji||'')+' '+w.topic.name)}</span>` : ''}
+              ${w.topic     ? `<span style="font-size:.7rem;background:rgba(129,140,248,.1);color:var(--primary, #818cf8);padding:2px 8px;border-radius:99px;font-weight:600;">${escapeHtml((w.topic.iconEmoji||'')+' '+w.topic.name)}</span>` : ''}
               ${w.cefrLevel ? `<span style="font-size:.7rem;background:rgba(251,191,36,.1);color:#fbbf24;padding:2px 8px;border-radius:99px;font-weight:600;">${escapeHtml(w.cefrLevel)}</span>` : ''}
               ${w.partOfSpeech ? `<span style="font-size:.7rem;background:rgba(148,163,184,.1);color:#94a3b8;padding:2px 8px;border-radius:99px;">${escapeHtml(w.partOfSpeech)}</span>` : ''}
             </div>
