@@ -18,7 +18,7 @@ public class PageController {
 
     @GetMapping("/import")
     public String learn() {
-        return "forward:/learn.html";
+        return "forward:/import.html";
     }
 
     @GetMapping("/quiz")
@@ -49,5 +49,10 @@ public class PageController {
     @GetMapping("/sets")
     public String sets() {
         return "forward:/sets.html";
+    }
+
+    @GetMapping("/profile")
+    public String profile() {
+        return "forward:/profile.html";
     }
 }

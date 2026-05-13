@@ -73,3 +73,5 @@ docker-compose.override.yml
 
 # Misc
 replay_pid*
+
+client_secret*

@@ -290,5 +290,8 @@ function resetQuiz() {
     document.getElementById('resultScreen').classList.add('hidden');
 }
 
-// Initialize
-loadCategories();
+window.onAppLoad(() => {
+    if (document.getElementById('setupScreen')) {
+        loadCategories();
+    }
+});

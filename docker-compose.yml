@@ -7,7 +7,33 @@ services:
     container_name: fsrspring-vocab
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATA_REDIS_HOST: redis
+      APP_API_LIBRETRANSLATE_BASE_URL: http://libretranslate:5000
       JAVA_OPTS: -Xms128m -Xmx512m
+    depends_on:
+      - redis
+      - libretranslate
     restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: fsrspring-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+
+  libretranslate:
+    image: libretranslate/libretranslate:latest
+    container_name: fsrspring-libretranslate
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+
+volumes:
+  redis_data:

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Flashcards - Linguist</title>
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script src="/js/router.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700;800&family=Nunito+Sans:wght@400;500;700&display=swap" rel="stylesheet">
   <script>
@@ -42,6 +42,7 @@
       }}
     }
   </script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
     .icon-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -73,23 +74,46 @@
 
 <!-- Sidebar -->
 <nav class="fixed left-0 top-0 h-full flex flex-col p-6 w-64 border-r-2 border-outline-variant bg-surface-container-lowest z-50">
-  <div class="mb-10">
+  <div class="mb-10 flex items-center gap-3">
     <h1 class="text-headline-lg font-headline-lg text-primary font-black">Linguist</h1>
   </div>
   <ul class="flex flex-col flex-1 gap-2">
-    <li><a href="/" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider">
-      <span class="material-symbols-outlined">home</span>Home</a></li>
-    <li><a href="/vocabulary" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider">
-      <span class="material-symbols-outlined">menu_book</span>Words</a></li>
+    <li><a href="/" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider text-bold font-bold">
+      <span class="material-symbols-outlined">home</span>Home
+    </a></li>
+    <li><a href="/vocabulary" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider text-bold font-bold">
+      <span class="material-symbols-outlined">menu_book</span>Words
+    </a></li>
     <li><a href="/flashcard-study" class="flex items-center gap-4 px-4 py-3 bg-primary-fixed text-primary border-2 border-primary rounded-xl font-label-lg text-label-lg uppercase tracking-wider">
-      <span class="material-symbols-outlined icon-filled">style</span>Flashcards</a></li>
-    <li><a href="/quiz" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider">
-      <span class="material-symbols-outlined">extension</span>Quiz</a></li>
-    <li><a href="/progress" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider">
-      <span class="material-symbols-outlined">leaderboard</span>Progress</a></li>
-    <li><a href="/import" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider">
-      <span class="material-symbols-outlined">add_circle</span>Import</a></li>
+      <span class="material-symbols-outlined icon-filled">style</span>Flashcards
+    </a></li>
+    <li><a href="/quiz" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider text-bold font-bold">
+      <span class="material-symbols-outlined">extension</span>Quiz
+    </a></li>
+    <li><a href="/progress" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider text-bold font-bold">
+      <span class="material-symbols-outlined">leaderboard</span>Progress
+    </a></li>
+    <li><a href="/import" class="flex items-center gap-4 px-4 py-3 text-on-surface-variant hover:bg-surface-container rounded-xl transition-colors font-label-lg text-label-lg uppercase tracking-wider text-bold font-bold">
+      <span class="material-symbols-outlined">add_circle</span>Import
+    </a></li>
   </ul>
+
+  <!-- User Profile Menu -->
+  <div class="mt-auto flex flex-col pt-6 border-t-2 border-outline-variant" id="userMenuContainer">
+    <a href="/profile" class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container rounded-xl transition-colors w-full text-left font-label-lg group border-2 border-transparent hover:border-outline-variant">
+        <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center border-2 border-primary overflow-hidden">
+          <img id="userAvatar" src="" alt="Avatar" class="w-full h-full object-cover hidden">
+          <span id="userInitial" class="material-symbols-outlined icon-filled text-primary text-sm block">person</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div id="userName" class="truncate font-bold text-on-surface leading-tight">Student</div>
+          <div id="userEmail" class="truncate text-xs text-on-surface-variant font-normal leading-tight">...</div>
+        </div>
+    </a>
+    <button onclick="window.location.href='/logout'" class="flex items-center justify-center gap-2 px-4 py-2 text-error hover:bg-error-container rounded-xl transition-colors font-label-lg font-bold w-full uppercase tracking-wider mt-2 border-2 border-transparent hover:border-error">
+        <span class="material-symbols-outlined">logout</span>Logout
+    </button>
+  </div>
 </nav>
 
 <!-- Top Header -->
@@ -130,13 +154,13 @@
         <h3 class="font-headline-md text-headline-md text-on-surface font-bold">Session Setup</h3>
         <div class="flex flex-col gap-xs">
           <label class="font-label-lg text-label-lg text-on-surface-variant uppercase">Category</label>
-          <select id="lcategory" class="px-3 py-3 bg-surface-container border-2 border-outline-variant rounded-xl font-body-md text-body-md text-on-surface outline-none focus:border-primary cursor-pointer">
+          <select id="lcategory" class="pl-3 pr-10 py-3 bg-surface-container border-2 border-outline-variant rounded-xl font-body-md text-body-md text-on-surface outline-none focus:border-primary cursor-pointer">
             <option value="">All Categories</option>
           </select>
         </div>
         <div class="flex flex-col gap-xs">
           <label class="font-label-lg text-label-lg text-on-surface-variant uppercase">Difficulty</label>
-          <select id="ldifficulty" class="px-3 py-3 bg-surface-container border-2 border-outline-variant rounded-xl font-body-md text-body-md text-on-surface outline-none focus:border-primary cursor-pointer">
+          <select id="ldifficulty" class="pl-3 pr-10 py-3 bg-surface-container border-2 border-outline-variant rounded-xl font-body-md text-body-md text-on-surface outline-none focus:border-primary cursor-pointer">
             <option value="">All Levels</option>
             <option value="BEGINNER">Beginner</option>
             <option value="INTERMEDIATE">Intermediate</option>
@@ -151,7 +175,7 @@
           </div>
           <div class="flex flex-col gap-xs">
             <label class="font-label-lg text-label-lg text-on-surface-variant uppercase">Mode</label>
-            <select id="lmode" class="px-3 py-3 bg-surface-container border-2 border-outline-variant rounded-xl font-body-md text-body-md text-on-surface outline-none focus:border-primary cursor-pointer">
+            <select id="lmode" class="pl-3 pr-10 py-3 bg-surface-container border-2 border-outline-variant rounded-xl font-body-md text-body-md text-on-surface outline-none focus:border-primary cursor-pointer">
               <option value="en-vi">EN to VI</option>
               <option value="vi-en">VI to EN</option>
             </select>
@@ -291,7 +315,14 @@ fetch('/api/streak').then(r=>r.json()).then(d=>{
   if(el) el.textContent = d.currentStreak ?? 0;
 }).catch(()=>{});
 </script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="/js/learn.js"></script>
 <script src="/js/notifications.js"></script>
+
+
+
+
+
+
 </body>
 </html>

@@ -15,6 +15,7 @@ import java.util.NoSuchElementException;
 public class WordService {
 
     private final WordRepository wordRepository;
+    private final WordEnrichmentService wordEnrichmentService;
 
     public List<Word> getAllWords() {
         return wordRepository.findAll();
@@ -50,7 +51,9 @@ public class WordService {
     }
 
     public Word createWord(Word word) {
-        return wordRepository.save(word);
+        Word saved = wordRepository.save(word);
+        wordEnrichmentService.enqueueWord(saved.getId());
+        return saved;
     }
 
     public List<Word> getWordsByTopic(Long topicId) {
