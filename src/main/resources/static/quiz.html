@@ -4,9 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quiz - Linguist</title>
-  <script src="/js/router.js"></script>
+    <script src="/js/router.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700;800&family=Nunito+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- CRITICAL LOAD ORDER: DO NOT REORDER THESE TWO BLOCKS.
+       Rule: CDN script must load FIRST (defines window.tailwind),
+       then tailwind.config block runs. Wrong order = all custom
+       colors/fonts/spacing silently broken. See .git/hooks/pre-commit. -->
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <script>
     tailwind.config = {
       darkMode:"class",
@@ -42,7 +47,6 @@
       }}
     }
   </script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
     .icon-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -105,19 +109,7 @@
 
   <!-- User Profile Menu -->
   <div class="mt-auto flex flex-col pt-6 border-t-2 border-outline-variant" id="userMenuContainer">
-    <a href="/profile" class="flex items-center gap-3 px-4 py-3 text-on-surface hover:bg-surface-container rounded-xl transition-colors w-full text-left font-label-lg group border-2 border-transparent hover:border-outline-variant">
-        <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center border-2 border-primary overflow-hidden">
-          <img id="userAvatar" src="" alt="Avatar" class="w-full h-full object-cover hidden">
-          <span id="userInitial" class="material-symbols-outlined icon-filled text-primary text-sm block">person</span>
-        </div>
-        <div class="flex-1 min-w-0">
-          <div id="userName" class="truncate font-bold text-on-surface leading-tight">Student</div>
-          <div id="userEmail" class="truncate text-xs text-on-surface-variant font-normal leading-tight">...</div>
-        </div>
-    </a>
-    <button onclick="window.location.href='/logout'" class="flex items-center justify-center gap-2 px-4 py-2 text-error hover:bg-error-container rounded-xl transition-colors font-label-lg font-bold w-full uppercase tracking-wider mt-2 border-2 border-transparent hover:border-error">
-        <span class="material-symbols-outlined">logout</span>Logout
-    </button>
+    <!-- Loaded dynamically -->
   </div>
 </nav>
 
@@ -314,14 +306,64 @@ window.onAppLoad(() => {
   }
 });
 </script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="/js/quiz.js"></script>
 <script src="/js/notifications.js"></script>
 
 
 
 
-
+<script>
+async function loadUserMenu() {
+  const container = document.getElementById('userMenuContainer');
+  if (!container) return;
+  
+  // Set initial loading state
+  container.innerHTML = `
+    <div class="flex items-center gap-3 px-4 py-3 text-on-surface font-label-lg">
+      <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center border-2 border-primary overflow-hidden">
+        <span class="material-symbols-outlined icon-filled text-primary text-sm block">person</span>
+      </div>
+      <div class="flex-1 min-w-0 font-bold text-on-surface uppercase tracking-wider">Loading...</div>
+    </div>
+  `;
+  
+  try {
+    const res = await fetch('/api/user/me');
+    if (res.ok) {
+      const user = await res.json();
+      container.innerHTML = `
+        <a href="/profile" class="flex items-center gap-3 px-4 py-3 bg-surface-container-lowest text-on-surface hover:bg-surface-container border-2 border-transparent hover:border-outline-variant rounded-xl transition-colors w-full text-left font-label-lg group">
+          <div class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center border-2 border-primary overflow-hidden">
+            ${user.avatarUrl ? \`<img src="${user.avatarUrl}" alt="Avatar" class="w-full h-full object-cover">\` : \`<span class="material-symbols-outlined icon-filled text-primary text-sm block">person</span>\`}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="truncate font-bold text-on-surface leading-tight">${user.name || 'Student'}</div>
+            <div class="truncate text-xs text-on-surface-variant font-normal leading-tight">${user.email || ''}</div>
+          </div>
+        </a>
+        <button onclick="window.location.href='/logout'" class="flex items-center justify-center gap-2 px-4 py-2 text-error hover:bg-error-container rounded-xl transition-colors font-label-lg font-bold w-full uppercase tracking-wider mt-2 border-2 border-transparent hover:border-error">
+          <span class="material-symbols-outlined">logout</span>Logout
+        </button>
+      `;
+    } else {
+      // Not logged in Show Login button
+      container.innerHTML = `
+        <a href="/oauth2/authorization/google" class="flex items-center gap-3 px-4 py-3 bg-primary text-on-primary hover:opacity-90 rounded-xl transition-colors w-full text-left font-label-lg border-2 border-primary">
+          <div class="w-8 h-8 rounded-full bg-on-primary flex items-center justify-center overflow-hidden">
+            <span class="material-symbols-outlined text-primary text-sm block">login</span>
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="truncate font-bold uppercase tracking-wider">Login</div>
+          </div>
+        </a>
+      `;
+    }
+  } catch (e) {
+    console.error('Failed to check user status', e);
+  }
+}
+document.addEventListener('DOMContentLoaded', loadUserMenu);
+</script>
 
 </body>
 </html>

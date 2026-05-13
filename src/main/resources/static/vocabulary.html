@@ -4,9 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Words - Linguist</title>
-  <script src="/js/router.js"></script>
+    <script src="/js/router.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@500;700;800&family=Nunito+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+  <!-- CRITICAL LOAD ORDER: DO NOT REORDER THESE TWO BLOCKS.
+       Rule: CDN script must load FIRST (defines window.tailwind),
+       then tailwind.config block runs. Wrong order = all custom
+       colors/fonts/spacing silently broken. See .git/hooks/pre-commit. -->
+<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <script>
     tailwind.config = {
       darkMode: "class",
@@ -42,7 +47,6 @@
       }}
     }
   </script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
   <style>
     .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
     .icon-filled { font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
@@ -265,7 +269,6 @@ function escapeHtml(text) {
   return String(text).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 </script>
-  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="/js/vocabulary.js"></script>
 <script src="/js/notifications.js"></script>
 
