@@ -80,10 +80,10 @@ public class Word {
     @Builder.Default
     private EnrichmentStatus enrichmentStatus = EnrichmentStatus.NOT_REQUESTED;
 
-    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String enrichmentJson;
 
-    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String imageMetadataJson;
 
     private LocalDateTime enrichedAt;

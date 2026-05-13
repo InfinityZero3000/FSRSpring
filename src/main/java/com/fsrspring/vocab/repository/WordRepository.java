@@ -31,7 +31,7 @@ public interface WordRepository extends JpaRepository<Word, Long> {
     @Query("SELECT DISTINCT w.partOfSpeech FROM Word w WHERE w.partOfSpeech IS NOT NULL AND w.partOfSpeech <> ''")
     List<String> findAllPartsOfSpeech();
 
-    @Query("SELECT w FROM Word w ORDER BY RANDOM() LIMIT :limit")
+    @Query(value = "SELECT * FROM words ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<Word> findRandomWords(int limit);
 
     @Query("SELECT w FROM Word w WHERE LOWER(w.word) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(w.translation) LIKE LOWER(CONCAT('%', :keyword, '%'))")

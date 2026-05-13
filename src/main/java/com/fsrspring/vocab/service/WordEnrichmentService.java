@@ -11,6 +11,8 @@ import com.fsrspring.vocab.repository.WordEnrichmentJobRepository;
 import com.fsrspring.vocab.repository.WordRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +40,9 @@ public class WordEnrichmentService {
     private final DatamuseApiService datamuseApiService;
     private final WordImageService wordImageService;
 
+    @Autowired @Lazy
+    private WordEnrichmentService self;
+
     /**
      * Compatibility method for older callers. It creates or reuses an enrichment
      * job, processes it immediately, and returns the updated word.
@@ -45,7 +50,7 @@ public class WordEnrichmentService {
     @Transactional
     public Word enrichWord(Long wordId) {
         WordEnrichmentJob job = enqueueWord(wordId);
-        processJobNow(job.getId());
+        self.processJobNow(job.getId());
         return wordRepository.findById(wordId)
                 .orElseThrow(() -> new IllegalArgumentException("Word not found: " + wordId));
     }
@@ -101,21 +106,21 @@ public class WordEnrichmentService {
     }
 
     @Scheduled(fixedDelayString = "${app.enrichment.poll-delay-ms:10000}")
-    @Transactional
     public void processDueJobs() {
         if (!enrichmentProperties.getEnrichment().isEnabled()) {
             return;
         }
-        List<WordEnrichmentJob> dueJobs = enrichmentJobRepository
+        List<Long> dueJobIds = enrichmentJobRepository
                 .findTop10ByStatusAndNextRunAtLessThanEqualOrderByCreatedAtAsc(
                         WordEnrichmentJob.Status.PENDING,
                         LocalDateTime.now()
-                );
-        for (WordEnrichmentJob job : dueJobs) {
+                )
+                .stream().map(WordEnrichmentJob::getId).toList();
+        for (Long jobId : dueJobIds) {
             try {
-                processLoadedJob(job);
+                self.processJobNow(jobId);
             } catch (Exception e) {
-                log.warn("Enrichment job {} failed: {}", job.getId(), e.getMessage());
+                log.warn("Enrichment job {} failed: {}", jobId, e.getMessage());
             }
         }
     }

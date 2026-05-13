@@ -30,6 +30,15 @@ public class SecurityConfig {
                 new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED)
             ))
             .authorizeHttpRequests(authz -> authz
+                // Public read-only vocabulary endpoints
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/words", "/api/words/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/sets", "/api/sets/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/topics", "/api/topics/**").permitAll()
+                // Dictionary lookup & enrichment (admin operations, open for internal/seed use)
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/dictionary/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/dictionary/enrich-all").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/dictionary/enrich/**").permitAll()
+                // Everything else requires authentication
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()
             )

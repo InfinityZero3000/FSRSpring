@@ -64,3 +64,17 @@ textarea {
   transform: translateY(2px);
   box-shadow: 0 2px 0 rgba(3, 105, 161, 0.45);
 }
+
+.btn-press-error {
+  box-shadow: 0 4px 0 #93000a;
+}
+
+.btn-press-error:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #93000a;
+}
+
+@keyframes drainBar {
+  from { width: 100%; }
+  to { width: 0%; }
+}

@@ -98,7 +98,7 @@ export function NotificationWidget() {
           ) : null}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[360px] p-0 shadow-lg border-2 border-border overflow-hidden rounded-2xl">
+      <PopoverContent align="end" className="w-[360px] p-0 shadow-lg border-2 border-border overflow-hidden rounded-2xl bg-card">
         <div className="flex items-center justify-between border-b border-border bg-card px-5 py-4">
           <span className="font-display text-[15px] font-bold text-foreground">Notifications</span>
           <button
@@ -108,7 +108,7 @@ export function NotificationWidget() {
             Mark all read
           </button>
         </div>
-        <div className="max-h-[380px] overflow-y-auto">
+        <div className="max-h-[380px] overflow-y-auto bg-card">
           {notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-center">
               <IconBell className="mb-3 h-10 w-10 text-muted-foreground opacity-50" stroke={1.5} />

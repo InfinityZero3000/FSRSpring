@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api";
 import { formatPercent, masteryLabel } from "@/lib/utils";
+import { CatLoader } from "@/components/ui/cat-loader";
 import type { NotificationItem, UserProgress, Word } from "@/types/api";
 
 export function DashboardPage() {
@@ -18,6 +19,7 @@ export function DashboardPage() {
   const [review, setReview] = useState<UserProgress[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
@@ -45,11 +47,18 @@ export function DashboardPage() {
       setCategories(cats);
       setNotifications(notes.slice(0, 4));
       setWordOfDay(random[0] ?? null);
+      setLoading(false);
     }
-    load().catch(() => undefined);
+    load().catch(() => setLoading(false));
   }, []);
 
   const totalTracked = Math.max(stats.mastered + stats.learning, 1);
+
+  if (loading) return (
+    <AppShell>
+      <CatLoader label="Loading dashboard..." />
+    </AppShell>
+  );
 
   return (
     <AppShell>

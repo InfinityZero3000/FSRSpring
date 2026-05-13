@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/toast";
+import { CatLoader } from "@/components/ui/cat-loader";
 import { api } from "@/lib/api";
 import type { TrustedFlashcard, UserProgress } from "@/types/api";
 
@@ -25,6 +26,7 @@ export function FlashcardsPage() {
   const [flipped, setFlipped] = useState(false);
   const [trusted, setTrusted] = useState<TrustedFlashcard[]>([]);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
@@ -33,10 +35,11 @@ export function FlashcardsPage() {
     setTrusted(cards);
     setIndex(0);
     setFlipped(false);
+    setLoading(false);
   }, [search]);
 
   useEffect(() => {
-    load().catch(() => toast("Không thể tải flashcards từ backend. Đang hiển thị dữ liệu trống.", "warning"));
+    load().catch(() => { setLoading(false); toast("Không thể tải flashcards từ backend. Đang hiển thị dữ liệu trống.", "warning"); });
   }, [load, toast]);
 
   const current = due[index];
@@ -76,6 +79,12 @@ export function FlashcardsPage() {
 
   const sessionDone = due.length > 0 && index >= due.length;
   const filteredTrusted = useMemo(() => trusted.slice(0, 12), [trusted]);
+
+  if (loading) return (
+    <AppShell>
+      <CatLoader label="Loading flashcards..." />
+    </AppShell>
+  );
 
   return (
     <AppShell>

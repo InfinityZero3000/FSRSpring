@@ -26,7 +26,7 @@ public class WordEnrichmentJob {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "word_id", nullable = false)
     @JsonIgnoreProperties({"topic"})
     @EqualsAndHashCode.Exclude

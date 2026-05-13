@@ -19,12 +19,12 @@ export function formatDateTime(value?: string | null) {
 
 export function masteryLabel(mastery?: string | null) {
   const labels: Record<string, string> = {
-    NEW: "Mới",
-    LEARNING: "Đang học",
-    REVIEWING: "Ôn tập",
-    MASTERED: "Đã thuộc"
+    NEW: "New",
+    LEARNING: "Learning",
+    REVIEWING: "Reviewing",
+    MASTERED: "Mastered"
   };
-  return mastery ? labels[mastery] || mastery : "Mới";
+  return mastery ? labels[mastery] || mastery : "New";
 }
 
 export function difficultyLabel(value?: string | null) {

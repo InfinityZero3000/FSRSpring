@@ -55,7 +55,7 @@ export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
     };
 
     return (
-      <div ref={containerRef} className={cn("relative w-full", className)}>
+      <div ref={containerRef} className={cn("relative", className)}>
         <select ref={ref} value={value} onChange={onChange} className="hidden" aria-hidden="true" {...props}>
           {children}
         </select>
@@ -65,8 +65,7 @@ export const Select = React.forwardRef<HTMLSelectElement, React.SelectHTMLAttrib
           onClick={() => setOpen(!open)}
           className={cn(
             "flex h-11 w-full items-center justify-between rounded-xl border-2 bg-card px-3 text-sm font-medium outline-none transition",
-            open ? "border-primary ring-4 ring-primary/10" : "border-input hover:border-muted-foreground/30",
-            className
+            open ? "border-primary ring-4 ring-primary/10" : "border-input hover:border-muted-foreground/30"
           )}
         >
           <span className="truncate">{selectedLabel}</span>

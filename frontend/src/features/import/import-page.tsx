@@ -11,6 +11,7 @@ import { Select } from "@/components/ui/select";
 import { Table, Td, Th } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
+import { CatLoader } from "@/components/ui/cat-loader";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
 import type { CefrLevel, DifficultyLevel, ImportJob, ImportRow, Topic } from "@/types/api";
@@ -25,11 +26,18 @@ export function ImportPage() {
   const [jobs, setJobs] = useState<ImportJob[]>([]);
   const [defaults, setDefaults] = useState({ difficulty: "INTERMEDIATE" as DifficultyLevel, cefrLevel: "" as CefrLevel | "", category: "", topicId: "" });
   const [targetSetName, setTargetSetName] = useState("");
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    api.topics().then(setTopics).catch(() => undefined);
-    api.importJobs().then(setJobs).catch(() => undefined);
+    Promise.all([
+      api.topics().catch(() => [] as Topic[]),
+      api.importJobs().catch(() => [] as ImportJob[]),
+    ]).then(([tops, importJobs]) => {
+      setTopics(tops);
+      setJobs(importJobs);
+      setLoading(false);
+    }).catch(() => setLoading(false));
     const saved = window.localStorage.getItem("fsrspring-import-draft");
     if (saved) {
       try {
@@ -128,6 +136,12 @@ export function ImportPage() {
   function updateRow(id: string, patch: Partial<ImportRow>) {
     setRows((current) => current.map((row) => row.clientRowId === id ? { ...row, ...patch } : row));
   }
+
+  if (loading) return (
+    <AppShell>
+      <CatLoader label="Loading import..." />
+    </AppShell>
+  );
 
   return (
     <AppShell>

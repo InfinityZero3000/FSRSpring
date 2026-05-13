@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   IconBell,
-  IconLogin2,
+  IconDoorEnter,
   IconLogout2,
   IconUserFilled
 } from "@tabler/icons-react";
@@ -100,7 +100,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : (
             <Button asChildCompat="a" className="w-full">
               <a href="/oauth2/authorization/google">
-                <IconLogin2 className="h-5 w-5" stroke={2} />
+                <IconDoorEnter className="h-5 w-5" stroke={2} />
                 Login
               </a>
             </Button>
@@ -117,7 +117,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="font-display text-[24px] font-bold leading-none text-[#f4bf00]">{streak}</span>
             </button>
             <button className="flex items-center gap-2 transition hover:opacity-80" aria-label="XP">
-              <AppDiamondIcon className="text-[34px] text-[#1cb0f6]" />
+              <span className="flex items-center justify-center rounded-lg bg-[#1cb0f6] p-[3px]">
+                <AppDiamondIcon className="text-[28px] text-white" />
+              </span>
               <span className="font-display text-[24px] font-bold leading-none text-[#1cb0f6]">{xp}</span>
             </button>
             <NotificationWidget />

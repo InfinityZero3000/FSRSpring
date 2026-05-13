@@ -51,6 +51,9 @@ public class WordService {
     }
 
     public Word createWord(Word word) {
+        if (wordRepository.existsByWordIgnoreCase(word.getWord())) {
+            throw new IllegalArgumentException("Word already exists: " + word.getWord());
+        }
         Word saved = wordRepository.save(word);
         wordEnrichmentService.enqueueWord(saved.getId());
         return saved;

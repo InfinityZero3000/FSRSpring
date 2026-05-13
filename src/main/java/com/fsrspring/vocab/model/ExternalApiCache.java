@@ -35,14 +35,14 @@ public class ExternalApiCache {
     @Column(nullable = false, length = 1000)
     private String cacheKey;
 
-    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String paramsJson;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private Status status;
 
-    @Lob
+    @Column(columnDefinition = "LONGTEXT")
     private String responseJson;
 
     @Column(length = 1000)

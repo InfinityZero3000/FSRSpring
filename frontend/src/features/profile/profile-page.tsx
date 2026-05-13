@@ -1,10 +1,11 @@
 "use client";
 
-import { IconLogin2, IconLogout2, IconUser } from "@tabler/icons-react";
+import { IconDoorEnter, IconLogout2, IconUser } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CatLoader } from "@/components/ui/cat-loader";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
 import type { AppUser } from "@/types/api";
@@ -12,13 +13,25 @@ import type { AppUser } from "@/types/api";
 export function ProfilePage() {
   const [user, setUser] = useState<AppUser | null>(null);
   const [summary, setSummary] = useState({ words: 0, streak: 0 });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.me().then(setUser).catch(() => setUser(null));
-    Promise.all([api.wordCount().catch(() => ({ count: 0 })), api.streak().catch(() => ({} as Record<string, number>))]).then(([words, streak]) => {
+    Promise.all([
+      api.me().catch(() => null),
+      api.wordCount().catch(() => ({ count: 0 })),
+      api.streak().catch(() => ({} as Record<string, number>)),
+    ]).then(([me, words, streak]) => {
+      setUser(me);
       setSummary({ words: words.count ?? 0, streak: streak.currentStreak ?? 0 });
-    });
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
+
+  if (loading) return (
+    <AppShell>
+      <CatLoader label="Loading profile..." />
+    </AppShell>
+  );
 
   return (
     <AppShell>
@@ -34,7 +47,7 @@ export function ProfilePage() {
               {user ? (
                 <Button asChildCompat="a" variant="outline"><a href="/logout"><IconLogout2 className="h-4 w-4" /> Logout</a></Button>
               ) : (
-                <Button asChildCompat="a"><a href="/oauth2/authorization/google"><IconLogin2 className="h-4 w-4" /> Login with Google</a></Button>
+                <Button asChildCompat="a"><a href="/oauth2/authorization/google"><IconDoorEnter className="h-4 w-4" /> Login with Google</a></Button>
               )}
             </div>
           </CardContent>

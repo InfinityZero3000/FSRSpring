@@ -7,6 +7,7 @@ import com.fsrspring.vocab.repository.ExternalApiCacheRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
@@ -25,7 +26,7 @@ public class ExternalApiCacheService {
     private final ExternalApiCacheRepository cacheRepository;
     private final ObjectMapper objectMapper;
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Optional<JsonNode> getOrFetch(ExternalApiCache.Provider provider,
                                          String cacheKey,
                                          String paramsJson,
