@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,10 +29,13 @@ public class FlashcardService {
 
     public List<TrustedFlashcard> list(String search) {
         normalizeLegacyTranslations();
+        List<TrustedFlashcard> cards;
         if (search != null && !search.isBlank()) {
-            return flashcardRepository.searchByKeyword(search);
+            cards = flashcardRepository.searchByKeyword(search);
+        } else {
+            cards = flashcardRepository.findTop100ByOrderByImportedAtDesc();
         }
-        return flashcardRepository.findTop100ByOrderByImportedAtDesc();
+        return uniqueByWord(cards);
     }
 
     public List<TrustedFlashcard> importTrustedSet(String sourceName, String topic) {
@@ -44,19 +48,23 @@ public class FlashcardService {
         );
 
         for (Map<String, String> item : defaults) {
-            TrustedFlashcard flashcard = TrustedFlashcard.builder()
-                    .word(item.get("word"))
-                    .translation(item.get("translation"))
-                    .example(item.get("example"))
-                    .topic(topic)
-                    .level("B1")
-                    .sourceName(sourceName)
-                    .sourceUrl("https://" + sourceName.toLowerCase().replace(" ", "") + ".com")
-                    .build();
+            TrustedFlashcard flashcard = flashcardRepository
+                    .findBySourceNameIgnoreCaseAndTopicIgnoreCaseAndWordIgnoreCase(sourceName, topic, item.get("word"))
+                    .orElseGet(() -> TrustedFlashcard.builder()
+                            .word(item.get("word"))
+                            .topic(topic)
+                            .level("B1")
+                            .sourceName(sourceName)
+                            .sourceUrl("https://" + sourceName.toLowerCase().replace(" ", "") + ".com")
+                            .build());
+
+            flashcard.setTranslation(item.get("translation"));
+            flashcard.setExample(item.get("example"));
+            flashcard.setLevel("B1");
             seeded.add(flashcardRepository.save(flashcard));
         }
 
-        return seeded;
+        return uniqueByWord(seeded);
     }
 
     public Word saveToVocabulary(Long flashcardId, Word.DifficultyLevel difficulty, String category) {
@@ -71,7 +79,7 @@ public class FlashcardService {
                 .category(category)
                 .build();
 
-        return wordService.createWord(word);
+        return wordService.getOrCreateWord(word);
     }
 
     private void normalizeLegacyTranslations() {
@@ -88,5 +96,16 @@ public class FlashcardService {
                 flashcardRepository.save(flashcard);
             }
         }
+    }
+
+    private List<TrustedFlashcard> uniqueByWord(List<TrustedFlashcard> cards) {
+        Map<String, TrustedFlashcard> unique = new LinkedHashMap<>();
+        for (TrustedFlashcard card : cards) {
+            String key = card.getWord() == null ? "" : card.getWord().trim().toLowerCase(Locale.ROOT);
+            if (!key.isBlank()) {
+                unique.putIfAbsent(key, card);
+            }
+        }
+        return new ArrayList<>(unique.values());
     }
 }

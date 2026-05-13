@@ -2,9 +2,8 @@
 
 import { IconArrowLeft, IconCircleCheck, IconCircleX, IconPlayerPlay, IconPuzzle } from "@tabler/icons-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShellLoading } from "@/components/layout/app-shell";
 import { Select } from "@/components/ui/select";
-import { CatLoader } from "@/components/ui/cat-loader";
 import { api } from "@/lib/api";
 import type { Topic, Word } from "@/types/api";
 
@@ -54,7 +53,7 @@ export function QuizPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     Promise.all([
@@ -136,8 +135,7 @@ export function QuizPage() {
   // ──── SETUP SCREEN ────
   if (screen === "setup") {
     return (
-      <AppShell>
-        <div className="mx-auto max-w-lg">
+      <div className="mx-auto max-w-lg">
           <QuizHero />
           <div className="rounded-xl border-2 border-border bg-white p-6">
             <h3 className="mb-5 font-display text-xl font-bold text-foreground">Quiz Setup</h3>
@@ -237,8 +235,7 @@ export function QuizPage() {
               </button>
             </div>
           </div>
-        </div>
-      </AppShell>
+      </div>
     );
   }
 
@@ -253,8 +250,7 @@ export function QuizPage() {
           ? "border-secondary bg-secondary/20 text-secondary-foreground"
           : "border-destructive bg-destructive/10 text-destructive";
     return (
-      <AppShell>
-        <div className="mx-auto mt-8 max-w-lg">
+      <div className="mx-auto mt-8 max-w-lg">
           <div className="flex flex-col items-center gap-6 rounded-xl border-2 border-border bg-white p-8">
             <div
               className={`flex h-36 w-36 flex-col items-center justify-center rounded-full border-4 ${scoreCls}`}
@@ -294,8 +290,7 @@ export function QuizPage() {
               </button>
             </div>
           </div>
-        </div>
-      </AppShell>
+      </div>
     );
   }
 
@@ -311,15 +306,10 @@ export function QuizPage() {
       : "Choose the correct English word";
   const progressPct = (index / words.length) * 100;
 
-  if (loading) return (
-    <AppShell>
-      <CatLoader label="Loading quiz..." />
-    </AppShell>
-  );
+  if (loading) return <AppShellLoading label="Loading quiz..." />;
 
   return (
-    <AppShell>
-      <div className="mx-auto mt-6 max-w-xl space-y-4">
+    <div className="mx-auto mt-6 max-w-xl space-y-4">
         {/* Progress Row */}
         <div className="flex items-center gap-3">
           <button
@@ -458,7 +448,6 @@ export function QuizPage() {
             {index + 1 >= words.length ? "See Results" : "Next Question"}
           </button>
         ) : null}
-      </div>
-    </AppShell>
+    </div>
   );
 }

@@ -9,14 +9,15 @@ import {
   IconSparkles,
   IconTrash
 } from "@tabler/icons-react";
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { AppShell } from "@/components/layout/app-shell";
-import { CatLoader } from "@/components/ui/cat-loader";
+import { FormEvent, useCallback, useDeferredValue, useEffect, useRef, useState } from "react";
+import { AppShellLoading } from "@/components/layout/app-shell";
 import { Dialog } from "@/components/ui/dialog";
 import { Select } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
-import type { DifficultyLevel, Word } from "@/types/api";
+import type { DifficultyLevel, PageResponse, Topic, Word } from "@/types/api";
+
+const WORD_PAGE_SIZE = 20;
 
 const emptyWord: Partial<Word> = {
   word: "",
@@ -66,62 +67,149 @@ function EnrichmentPill({ status }: { status?: string }) {
   );
 }
 
+function normalizeWordPage(payload: PageResponse<Word> | Word[] | undefined, page: number): PageResponse<Word> {
+  if (!payload) {
+    return {
+      content: [],
+      number: page,
+      size: WORD_PAGE_SIZE,
+      totalElements: 0,
+      totalPages: 0,
+      last: true
+    };
+  }
+
+  if (!Array.isArray(payload)) {
+    return {
+      content: payload.content ?? [],
+      number: payload.number ?? page,
+      size: payload.size ?? WORD_PAGE_SIZE,
+      totalElements: payload.totalElements ?? payload.content?.length ?? 0,
+      totalPages: payload.totalPages ?? 1,
+      last: payload.last ?? true
+    };
+  }
+
+  const start = page * WORD_PAGE_SIZE;
+  const content = payload.slice(start, start + WORD_PAGE_SIZE);
+  return {
+    content,
+    number: page,
+    size: WORD_PAGE_SIZE,
+    totalElements: payload.length,
+    totalPages: Math.ceil(payload.length / WORD_PAGE_SIZE),
+    last: start + WORD_PAGE_SIZE >= payload.length
+  };
+}
+
 export function VocabularyPage() {
   const params = useSearchParams();
   const [words, setWords] = useState<Word[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState(params.get("category") || "");
   const [difficulty, setDifficulty] = useState("");
-  const [topic, setTopic] = useState("");
+  const [topicId, setTopicId] = useState("");
   const [cefr, setCefr] = useState("");
   const [editing, setEditing] = useState<Partial<Word> | null>(null);
   const [deleting, setDeleting] = useState<Word | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalWords, setTotalWords] = useState(0);
+  const deferredSearch = useDeferredValue(search);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const requestSeqRef = useRef(0);
+  const replacingRef = useRef(false);
+  const loadingMoreRef = useRef(false);
+  const hasMoreRef = useRef(false);
+  const pageRef = useRef(0);
   const { toast } = useToast();
 
-  async function load() {
-    const [allWords, cats] = await Promise.all([
-      api.words().catch(() => [] as Word[]),
-      api.categories().catch(() => [] as string[])
-    ]);
-    setWords(allWords);
-    setCategories(cats);
-    setLoading(false);
-  }
+  const querySearch = deferredSearch.trim();
 
   useEffect(() => {
-    load().catch(() =>
-      toast("Không thể tải dữ liệu từ backend. Đang hiển thị danh sách trống.", "warning")
-    );
-  }, [toast]);
-
-  const topics = useMemo(() => {
-    const seen = new Set<string>();
-    return words
-      .filter((w) => w.topic?.name && !seen.has(w.topic.name) && seen.add(w.topic.name))
-      .map((w) => w.topic!.name);
-  }, [words]);
-
-  const filtered = useMemo(() => {
-    const q = search.toLowerCase();
-    const seen = new Set<string>();
-    return words.filter((word) => {
-      const key = word.word.toLowerCase();
-      if (seen.has(key)) return false;
-      const matchesSearch =
-        !q ||
-        word.word.toLowerCase().includes(q) ||
-        (word.translation || "").toLowerCase().includes(q);
-      const matchesCategory = !category || word.category === category;
-      const matchesDifficulty = !difficulty || word.difficulty === difficulty;
-      const matchesTopic = !topic || word.topic?.name === topic;
-      const matchesCefr = !cefr || word.cefrLevel === cefr;
-      const passes = matchesSearch && matchesCategory && matchesDifficulty && matchesTopic && matchesCefr;
-      if (passes) seen.add(key);
-      return passes;
+    Promise.all([
+      api.categories().catch(() => [] as string[]),
+      api.topics().catch(() => [] as Topic[])
+    ]).then(([cats, topicList]) => {
+      setCategories(cats);
+      setTopics(topicList);
     });
-  }, [words, search, category, difficulty, topic, cefr]);
+  }, []);
+
+  const loadWords = useCallback(async (nextPage: number, mode: "replace" | "append") => {
+    const requestSeq = ++requestSeqRef.current;
+    if (mode === "append") {
+      setLoadingMore(true);
+      loadingMoreRef.current = true;
+    } else {
+      setLoading(true);
+      replacingRef.current = true;
+      setLoadingMore(false);
+      loadingMoreRef.current = false;
+    }
+
+    try {
+      const wordPage = normalizeWordPage(await api.wordsPage({
+        page: nextPage,
+        size: WORD_PAGE_SIZE,
+        search: querySearch,
+        category,
+        difficulty,
+        topicId,
+        cefrLevel: cefr
+      }), nextPage);
+
+      if (requestSeq !== requestSeqRef.current) return;
+
+      setWords((current) => (mode === "append" ? [...current, ...wordPage.content] : wordPage.content));
+      pageRef.current = wordPage.number;
+      setHasMore(!wordPage.last);
+      hasMoreRef.current = !wordPage.last;
+      setTotalWords(wordPage.totalElements);
+    } catch {
+      if (requestSeq === requestSeqRef.current) {
+        toast("Không thể tải dữ liệu từ backend. Đang hiển thị danh sách hiện có.", "warning");
+      }
+    } finally {
+      if (requestSeq === requestSeqRef.current) {
+        setLoading(false);
+        replacingRef.current = false;
+        setLoadingMore(false);
+        loadingMoreRef.current = false;
+      }
+    }
+  }, [category, cefr, difficulty, querySearch, toast, topicId]);
+
+  const loadNextPage = useCallback(() => {
+    if (replacingRef.current || loadingMoreRef.current || !hasMoreRef.current) return;
+    void loadWords(pageRef.current + 1, "append");
+  }, [loadWords]);
+
+  useEffect(() => {
+    setWords([]);
+    pageRef.current = 0;
+    setHasMore(false);
+    hasMoreRef.current = false;
+    setTotalWords(0);
+    void loadWords(0, "replace");
+  }, [loadWords]);
+
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        loadNextPage();
+      }
+    }, { rootMargin: "480px 0px" });
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadNextPage]);
 
   async function saveWord(event: FormEvent) {
     event.preventDefault();
@@ -135,7 +223,7 @@ export function VocabularyPage() {
         toast("Đã thêm từ mới.", "success");
       }
       setEditing(null);
-      await load();
+      await loadWords(0, "replace");
     } catch {
       toast("Không thể lưu từ vựng. Vui lòng thử lại.", "error");
     }
@@ -147,7 +235,7 @@ export function VocabularyPage() {
       await api.deleteWord(deleting.id);
       setDeleting(null);
       toast("Đã xóa từ vựng.", "success");
-      await load();
+      await loadWords(0, "replace");
     } catch {
       toast("Không thể xóa từ vựng. Vui lòng thử lại.", "error");
     }
@@ -157,21 +245,23 @@ export function VocabularyPage() {
     try {
       await api.enrichWord(id);
       toast("Enrichment queued.", "success");
-      await load();
+      await loadWords(0, "replace");
     } catch {
       toast("Không thể enrich từ này.", "error");
     }
   }
 
+  if (loading) return <AppShellLoading label="Loading vocabulary..." />;
+
   return (
-    <AppShell>
+    <>
       {/* Hero Section */}
       <div className="-mx-4 -mt-6 lg:-mt-8 xl:-mx-12 bg-primary px-4 py-6 xl:px-12">
         <div className="flex flex-col gap-4 md:flex-row md:items-center">
           <div className="flex-1">
             <h2 className="font-display text-[32px] font-black text-primary-foreground">My Vocabulary</h2>
             <p className="mt-1 font-body text-[17px] text-accent">
-              {words.length ? `${filtered.length} từ` : "Loading words..."}
+              {`${totalWords} từ`}
             </p>
           </div>
           <div className="flex gap-3">
@@ -221,14 +311,14 @@ export function VocabularyPage() {
           <option value="ADVANCED">Advanced</option>
         </Select>
         <Select
-          value={topic}
-          onChange={(e) => setTopic(e.target.value)}
+          value={topicId}
+          onChange={(e) => setTopicId(e.target.value)}
           aria-label="Filter by topic"
           className="w-44"
         >
           <option value="">All Topics</option>
           {topics.map((t) => (
-            <option key={t} value={t}>{t}</option>
+            <option key={t.id} value={t.id}>{t.name}</option>
           ))}
         </Select>
         <Select
@@ -245,7 +335,7 @@ export function VocabularyPage() {
       </div>
 
       {/* Empty State */}
-      {!filtered.length ? (
+      {!words.length ? (
         <div className="flex flex-col items-center justify-center gap-5 py-16 text-muted-foreground">
           <IconBooks className="h-16 w-16" strokeWidth={1.5} />
           <p className="font-display text-2xl font-bold text-foreground">No words found</p>
@@ -261,9 +351,9 @@ export function VocabularyPage() {
       ) : null}
 
       {/* Word Grid */}
-      {filtered.length ? (
+      {words.length ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((word) => (
+          {words.map((word) => (
             <div
               key={word.id}
               className="flex flex-col gap-2 rounded-xl border-2 border-border bg-white p-5 transition-[border-color,box-shadow] hover:border-primary hover:shadow-[0_2px_8px_rgba(0,101,144,0.12)]"
@@ -352,6 +442,19 @@ export function VocabularyPage() {
               </div>
             </div>
           ))}
+        </div>
+      ) : null}
+
+      {words.length ? (
+        <div
+          ref={sentinelRef}
+          className="flex h-16 items-center justify-center font-display text-[0.78rem] font-bold uppercase tracking-[0.04em] text-muted-foreground"
+        >
+          {loadingMore
+            ? "Loading more words..."
+            : hasMore
+              ? `${words.length} / ${totalWords} loaded`
+              : "All words loaded"}
         </div>
       ) : null}
 
@@ -494,6 +597,6 @@ export function VocabularyPage() {
           </div>
         </div>
       </Dialog>
-    </AppShell>
+    </>
   );
 }

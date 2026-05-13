@@ -2,8 +2,7 @@
 
 import { IconAward, IconBooks, IconBrain, IconCircleCheck, IconCircleX, IconSchool, IconTarget, IconTrophy } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
-import { AppShell } from "@/components/layout/app-shell";
-import { CatLoader } from "@/components/ui/cat-loader";
+import { AppShellLoading } from "@/components/layout/app-shell";
 import { api } from "@/lib/api";
 import { formatDateTime, masteryLabel } from "@/lib/utils";
 import type { QuizSession, UserProgress } from "@/types/api";
@@ -88,15 +87,10 @@ export function ProgressPage() {
   const completedSessions = quizStats.completedSessions ?? 0;
   const averageScore = quizStats.averageScore ?? 0;
 
-  if (loading) return (
-    <AppShell>
-      <CatLoader label="Loading progress..." />
-    </AppShell>
-  );
+  if (loading) return <AppShellLoading label="Loading progress..." />;
 
   return (
-    <AppShell>
-      <div className="space-y-8">
+    <div className="space-y-8">
         {/* Overview Stats */}
         <section>
           <h2 className="mb-6 font-display text-[24px] font-bold text-foreground">Overview</h2>
@@ -315,7 +309,6 @@ export function ProgressPage() {
             </table>
           </div>
         </div>
-      </div>
-    </AppShell>
+    </div>
   );
 }

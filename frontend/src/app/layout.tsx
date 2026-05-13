@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Script from "next/script";
 import "./globals.css";
+import { AppShell } from "@/components/layout/app-shell";
+import { PersistentAppBackground } from "@/components/layout/persistent-app-background";
 import { ToastProvider } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
@@ -40,8 +42,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             `
           }}
         />
+        <PersistentAppBackground />
         <ToastProvider>
-          {children}
+          <AppShell>
+            {children}
+          </AppShell>
         </ToastProvider>
       </body>
     </html>

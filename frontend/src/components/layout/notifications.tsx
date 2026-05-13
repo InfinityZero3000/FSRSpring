@@ -75,7 +75,7 @@ export function NotificationWidget() {
       setUnreadCount(c => Math.max(0, c - 1));
     }
     if (deepLink?.trim()) {
-      window.location.href = deepLink;
+      window.location.assign(deepLink);
     }
   };
 

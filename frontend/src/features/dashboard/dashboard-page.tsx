@@ -4,13 +4,12 @@ import Link from "next/link";
 import { IconChevronRight, IconPlayerPlayFilled, IconSchool, IconTrophy } from "@tabler/icons-react";
 import { useEffect, useState } from "react";
 import { AppFlameIcon, navigationIcons } from "@/components/icons/app-icons";
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShellLoading } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { api } from "@/lib/api";
 import { formatPercent, masteryLabel } from "@/lib/utils";
-import { CatLoader } from "@/components/ui/cat-loader";
 import type { NotificationItem, UserProgress, Word } from "@/types/api";
 
 export function DashboardPage() {
@@ -54,15 +53,10 @@ export function DashboardPage() {
 
   const totalTracked = Math.max(stats.mastered + stats.learning, 1);
 
-  if (loading) return (
-    <AppShell>
-      <CatLoader label="Loading dashboard..." />
-    </AppShell>
-  );
+  if (loading) return <AppShellLoading label="Loading dashboard..." />;
 
   return (
-    <AppShell>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <section className="relative min-h-[260px] overflow-hidden rounded-xl bg-primary p-6 text-primary-foreground md:p-8">
           <div className="relative z-10 max-w-2xl">
             <p className="font-display text-sm font-bold uppercase tracking-widest text-sky-100">Good day, learner!</p>
@@ -175,8 +169,7 @@ export function DashboardPage() {
             </CardContent>
           </Card>
         </section>
-      </div>
-    </AppShell>
+    </div>
   );
 }
 

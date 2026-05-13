@@ -24,6 +24,15 @@ export interface Word {
   topic?: Topic | null;
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  number: number;
+  size: number;
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+}
+
 export interface UserProgress {
   id: number;
   word: Word;
@@ -61,9 +70,12 @@ export interface TrustedFlashcard {
   front?: string;
   back?: string;
   word?: string;
+  translation?: string;
   definition?: string;
   example?: string;
+  level?: string;
   source?: string;
+  sourceName?: string;
   topic?: string;
 }
 

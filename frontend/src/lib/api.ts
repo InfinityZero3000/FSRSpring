@@ -3,6 +3,7 @@ import type {
   ImportJob,
   ImportRow,
   NotificationItem,
+  PageResponse,
   QuizSession,
   Topic,
   TrustedFlashcard,
@@ -62,6 +63,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const api = {
   me: () => request<AppUser>("/api/user/me"),
   words: (query?: Query) => request<Word[]>(`/api/words${toQuery(query)}`),
+  wordsPage: (query?: Query) => request<PageResponse<Word>>(`/api/words${toQuery(query)}`),
   word: (id: number) => request<Word>(`/api/words/${id}`),
   createWord: (word: Partial<Word>) =>
     request<Word>("/api/words", { method: "POST", body: JSON.stringify(word) }),

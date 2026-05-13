@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  IconBell,
   IconDoorEnter,
   IconLogout2,
   IconUserFilled
@@ -12,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AppDiamondIcon, AppFlameIcon, navigationIcons } from "@/components/icons/app-icons";
 import { NotificationWidget } from "@/components/layout/notifications";
 import { Button } from "@/components/ui/button";
+import { CatLoader } from "@/components/ui/cat-loader";
 import { api, ApiError } from "@/lib/api";
 import { cn } from "@/lib/utils";
 import type { AppUser } from "@/types/api";
@@ -38,22 +38,34 @@ const titles: Record<string, string> = {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = useState<AppUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [streak, setStreak] = useState(0);
   const [xp] = useState(0);
-  const [unread, setUnread] = useState(0);
 
   const pageTitle = useMemo(() => titles[pathname] || "FSRSpring", [pathname]);
 
   useEffect(() => {
-    api.me().then(setUser).catch((error) => {
-      if (!(error instanceof ApiError && error.status === 401)) setUser(null);
-    });
+    let cancelled = false;
+
+    api.me()
+      .then((data) => {
+        if (!cancelled) setUser(data);
+      })
+      .catch((error) => {
+        if (!cancelled && !(error instanceof ApiError && error.status === 401)) setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) setAuthChecked(true);
+      });
     api.streak().then((data) => setStreak(data.currentStreak ?? 0)).catch(() => undefined);
-    api.unreadNotifications().then((data) => setUnread(data.unread ?? 0)).catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="app-shell min-h-screen text-foreground">
       <aside className="fixed left-0 top-0 z-40 hidden h-full w-64 flex-col border-r-2 border-border bg-card p-6 lg:flex">
         <Link href="/" className="mb-10 flex items-center">
           <span className="font-display text-[32px] font-bold leading-tight tracking-normal text-primary">Linguist</span>
@@ -80,13 +92,24 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
         <div className="border-t-2 border-border pt-6">
-          {user ? (
+          {!authChecked ? (
+            <div className="space-y-4" aria-label="Checking login status">
+              <div className="flex items-center gap-2">
+                <div className="h-10 w-10 shrink-0 animate-pulse rounded-full border-2 border-border bg-muted" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="h-4 w-28 animate-pulse rounded bg-muted" />
+                  <div className="h-3 w-36 animate-pulse rounded bg-muted" />
+                </div>
+              </div>
+              <div className="h-10 w-full animate-pulse rounded-xl bg-muted" />
+            </div>
+          ) : user ? (
             <div className="space-y-6">
-              <Link href="/profile" className="flex items-center gap-3">
+              <Link href="/profile" className="flex items-center gap-2">
                 <Avatar user={user} size="lg" />
                 <span className="min-w-0">
-                  <span className="block max-w-[145px] truncate font-display text-[18px] font-bold leading-tight text-foreground">{user.name || "Learner"}</span>
-                  <span className="block max-w-[145px] truncate text-[15px] font-bold text-[#404a52]">{user.email}</span>
+                  <span className="block max-w-[145px] truncate font-display text-[15px] font-bold leading-tight text-foreground">{user.name || "Learner"}</span>
+                  <span className="block max-w-[145px] truncate text-[12px] font-bold leading-tight text-[#404a52]">{user.email}</span>
                 </span>
               </Link>
               <a
@@ -123,11 +146,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <span className="font-display text-[24px] font-bold leading-none text-[#1cb0f6]">{xp}</span>
             </button>
             <NotificationWidget />
-            {user ? (
-              <Link href="/profile" className="hidden items-center transition hover:opacity-80 sm:flex" aria-label="Profile">
-                <Avatar user={user} size="sm" />
-              </Link>
-            ) : null}
           </div>
         </div>
         <nav className="mt-4 flex gap-2 overflow-x-auto lg:hidden">
@@ -147,8 +165,23 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+export function AppShellLoading({ label = "Loading..." }: { label?: string }) {
+  return (
+    <div className="app-loading-overlay">
+      <div className="app-loading-panel">
+        <CatLoader
+          size={280}
+          label={label}
+          className="gap-4 py-0"
+          labelClassName="rounded-full bg-white/72 px-4 py-1.5 font-display text-[0.82rem] font-bold uppercase tracking-[0.04em] text-primary shadow-sm"
+        />
+      </div>
+    </div>
+  );
+}
+
 function Avatar({ user, size }: { user: AppUser; size: "sm" | "lg" }) {
-  const box = size === "lg" ? "h-12 w-12 border-[3px]" : "h-10 w-10 border-2";
+  const box = size === "lg" ? "h-10 w-10 border-2" : "h-9 w-9 border-2";
 
   if (user.avatarUrl) {
     return (
@@ -162,7 +195,7 @@ function Avatar({ user, size }: { user: AppUser; size: "sm" | "lg" }) {
 
   return (
     <span className={cn(box, "flex shrink-0 items-center justify-center rounded-full border-primary bg-accent text-primary")}>
-      <IconUserFilled className="h-6 w-6" />
+      <IconUserFilled className={size === "lg" ? "h-5 w-5" : "h-4 w-4"} />
     </span>
   );
 }

@@ -45,6 +45,70 @@ body {
   font-weight: 500;
 }
 
+.app-background-layer {
+  --app-background-image: radial-gradient(circle at 12% 0%, rgba(28, 176, 246, 0.12), transparent 28rem);
+  --app-background-overlay: transparent;
+  position: fixed;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+}
+
+.app-background-layer::before,
+.app-background-layer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.app-background-layer::before {
+  z-index: 0;
+  background:
+    var(--app-background-image),
+    hsl(var(--background));
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.app-background-layer::after {
+  z-index: 1;
+  background: var(--app-background-overlay);
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  background: transparent;
+}
+
+.app-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(248, 252, 255, 0.52);
+  backdrop-filter: blur(14px);
+}
+
+.app-loading-panel {
+  display: grid;
+  place-items: center;
+}
+
+@media (min-width: 1024px) {
+  .app-background-layer {
+    left: 16rem;
+    top: 5rem;
+  }
+
+  .app-loading-overlay {
+    inset: 5rem 0 0 16rem;
+  }
+}
+
 button,
 input,
 select,

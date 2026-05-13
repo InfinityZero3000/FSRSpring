@@ -2,7 +2,7 @@
 
 import { IconDeviceFloppy, IconFileUpload, IconLanguage, IconSparkles } from "@tabler/icons-react";
 import { ChangeEvent, useEffect, useMemo, useState } from "react";
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShellLoading } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +11,6 @@ import { Select } from "@/components/ui/select";
 import { Table, Td, Th } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
-import { CatLoader } from "@/components/ui/cat-loader";
 import { api } from "@/lib/api";
 import { formatDateTime } from "@/lib/utils";
 import type { CefrLevel, DifficultyLevel, ImportJob, ImportRow, Topic } from "@/types/api";
@@ -137,15 +136,10 @@ export function ImportPage() {
     setRows((current) => current.map((row) => row.clientRowId === id ? { ...row, ...patch } : row));
   }
 
-  if (loading) return (
-    <AppShell>
-      <CatLoader label="Loading import..." />
-    </AppShell>
-  );
+  if (loading) return <AppShellLoading label="Loading import..." />;
 
   return (
-    <AppShell>
-      <div className="space-y-5">
+    <div className="space-y-5">
         <section className="grid gap-5 xl:grid-cols-[1fr_0.7fr]">
           <Card>
             <CardHeader>
@@ -235,8 +229,7 @@ export function ImportPage() {
             {!jobs.length ? <p className="font-semibold text-muted-foreground">No import jobs yet.</p> : null}
           </CardContent>
         </Card>
-      </div>
-    </AppShell>
+    </div>
   );
 }
 

@@ -3,6 +3,7 @@ package com.fsrspring.vocab.controller;
 import com.fsrspring.vocab.model.Word;
 import com.fsrspring.vocab.service.WordService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,13 +21,34 @@ public class WordController {
     private final WordService wordService;
 
     @GetMapping
-    public ResponseEntity<List<Word>> getAllWords(
+    public ResponseEntity<?> getAllWords(
             @RequestParam(required = false) String category,
             @RequestParam(required = false) Word.DifficultyLevel difficulty,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) Long topicId,
             @RequestParam(required = false) com.fsrspring.vocab.model.CefrLevel cefrLevel,
-            @RequestParam(required = false) String partOfSpeech) {
+            @RequestParam(required = false) String partOfSpeech,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size) {
+        if (page != null || size != null) {
+            Page<Word> wordPage = wordService.getWordsPage(
+                    category,
+                    difficulty,
+                    search,
+                    topicId,
+                    cefrLevel,
+                    partOfSpeech,
+                    page == null ? 0 : page,
+                    size == null ? 20 : size);
+            return ResponseEntity.ok(new WordPageResponse(
+                    wordPage.getContent(),
+                    wordPage.getNumber(),
+                    wordPage.getSize(),
+                    wordPage.getTotalElements(),
+                    wordPage.getTotalPages(),
+                    wordPage.isLast()));
+        }
+
         List<Word> words;
         if (search != null && !search.isBlank()) {
             words = wordService.searchWords(search);
@@ -48,6 +70,15 @@ public class WordController {
             words = wordService.getAllWords();
         }
         return ResponseEntity.ok(words);
+    }
+
+    public record WordPageResponse(
+            List<Word> content,
+            int number,
+            int size,
+            long totalElements,
+            int totalPages,
+            boolean last) {
     }
 
     @GetMapping("/{id}")
