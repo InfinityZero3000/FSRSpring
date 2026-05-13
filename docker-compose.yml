@@ -15,9 +15,29 @@ services:
       APP_API_LIBRETRANSLATE_BASE_URL: http://libretranslate:5000
       JAVA_OPTS: -Xms128m -Xmx512m
     depends_on:
+      - mysql
       - redis
       - libretranslate
     restart: unless-stopped
+
+  mysql:
+    image: mysql:8.4
+    container_name: fsrspring-mysql
+    ports:
+      - "${MYSQL_HOST_PORT:-3307}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpass}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-fsrspring}
+      MYSQL_USER: ${MYSQL_USER:-fsr_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-fsr_pass}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -37,3 +57,4 @@ services:
 
 volumes:
   redis_data:
+  mysql_data:

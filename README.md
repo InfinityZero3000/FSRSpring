@@ -36,8 +36,12 @@ If `java -version` is not 17.x, update JAVA_HOME before running Maven commands.
 ## Run Locally (macOS/Linux)
 
 ```bash
-./mvnw spring-boot:run
+./scripts/run-local.sh
 ```
+
+The app also loads `.env` automatically when started from the project root, so
+`./mvnw spring-boot:run` still works. The script exports `.env` first for tools
+or libraries that read process environment variables directly.
 
 ## Run Locally (Windows PowerShell)
 
