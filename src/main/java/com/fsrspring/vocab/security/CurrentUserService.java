@@ -8,6 +8,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class CurrentUserService {
@@ -15,15 +17,22 @@ public class CurrentUserService {
     private final AppUserRepository appUserRepository;
 
     public AppUser getCurrentUser() {
+        return getCurrentUserOptional()
+            .orElseThrow(() -> new RuntimeException("No authenticated user found in context"));
+    }
+
+    public Optional<AppUser> getCurrentUserOptional() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
-            throw new RuntimeException("No authenticated user found in context");
+            return Optional.empty();
         }
 
-        OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+        if (!(authentication.getPrincipal() instanceof OAuth2User oauth2User)) {
+            return Optional.empty();
+        }
+
         String email = oauth2User.getAttribute("email");
         
-        return appUserRepository.findByEmail(email)
-            .orElseThrow(() -> new RuntimeException("User not found in database for current session"));
+        return appUserRepository.findByEmail(email);
     }
 }

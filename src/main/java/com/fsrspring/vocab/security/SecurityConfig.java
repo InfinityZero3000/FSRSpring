@@ -34,10 +34,15 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/words", "/api/words/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/sets", "/api/sets/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/topics", "/api/topics/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/flashcards", "/api/flashcards/sources").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/flashcards/import").permitAll()
                 // Dictionary lookup & enrichment (admin operations, open for internal/seed use)
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/dictionary/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/dictionary/enrich-all").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/dictionary/enrich/**").permitAll()
+                // Quiz can be played as a guest; authenticated users still get progress tracking.
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/start").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/quiz/session/**").permitAll()
                 // Everything else requires authentication
                 .requestMatchers("/api/**").authenticated()
                 .anyRequest().permitAll()

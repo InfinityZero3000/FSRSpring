@@ -16,6 +16,14 @@ import { formatDateTime } from "@/lib/utils";
 import type { CefrLevel, DifficultyLevel, ImportJob, ImportRow, Topic } from "@/types/api";
 
 type Source = "paste" | "file";
+type DictionaryLookup = {
+  firstDefinition?: string;
+  firstExample?: string;
+  bestPhonetic?: string;
+  primaryPartOfSpeech?: string;
+  bestAudioUrl?: string;
+  word?: string;
+};
 
 export function ImportPage() {
   const [source, setSource] = useState<Source>("paste");
@@ -102,10 +110,14 @@ export function ImportPage() {
       if (!row.word) return row;
       try {
         const data = await api.lookupDictionary(row.word);
+        const lookup = data as DictionaryLookup;
         return {
           ...row,
-          translation: row.translation || String(data.translation || data.meaning || row.translation || ""),
-          pronunciation: row.pronunciation || String(data.pronunciation || "")
+          translation: row.translation || lookup.firstDefinition || "",
+          example: row.example || lookup.firstExample || "",
+          pronunciation: row.pronunciation || lookup.bestPhonetic || "",
+          partOfSpeech: row.partOfSpeech || lookup.primaryPartOfSpeech || "",
+          audioUrl: row.audioUrl || normalizeAudioUrl(lookup.bestAudioUrl)
         };
       } catch {
         return row;
@@ -118,7 +130,12 @@ export function ImportPage() {
   async function commit() {
     const payload = {
       sourceType: source.toUpperCase(),
-      targetSetName: targetSetName || null,
+      targetSet: targetSetName ? {
+        name: targetSetName,
+        topicId: defaults.topicId ? Number(defaults.topicId) : null,
+        cefrLevel: defaults.cefrLevel || null
+      } : null,
+      options: { autoEnrich: true },
       rows: rows.filter((row) => row.word)
     };
     try {
@@ -235,4 +252,9 @@ export function ImportPage() {
 
 function Status({ label, value }: { label: string; value: number }) {
   return <div className="rounded-xl bg-muted p-4"><p className="font-display text-xs font-bold uppercase text-muted-foreground">{label}</p><p className="font-display text-2xl font-bold">{value}</p></div>;
+}
+
+function normalizeAudioUrl(url?: string) {
+  if (!url) return "";
+  return url.startsWith("//") ? `https:${url}` : url;
 }

@@ -198,6 +198,82 @@ class ImportControllerTests {
     }
 
     @Test
+    @Transactional
+    void legacyTargetSetNameStillCreatesSetForImportPageCompatibility() throws Exception {
+        mockMvc.perform(post("/api/import/words/commit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of(
+                                "sourceType", "PASTE",
+                                "targetSetName", "Legacy UI Set",
+                                "rows", List.of(Map.of(
+                                        "clientRowId", "r1",
+                                        "word", "adaptable",
+                                        "translation", "linh hoat",
+                                        "difficulty", "INTERMEDIATE"
+                                ))
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.created").value(1));
+
+        VocabularySet set = vocabularySetRepository.findAll().get(0);
+        assertThat(set.getName()).isEqualTo("Legacy UI Set");
+        assertThat(set.getWords()).hasSize(1);
+    }
+
+    @Test
+    void autoEnrichFalseRequiresTranslationAndDoesNotQueueJob() throws Exception {
+        mockMvc.perform(post("/api/import/words/commit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of(
+                                "sourceType", "PASTE",
+                                "options", Map.of("autoEnrich", false),
+                                "rows", List.of(Map.of(
+                                        "clientRowId", "r1",
+                                        "word", "untranslated",
+                                        "difficulty", "BEGINNER"
+                                ))
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.created").value(0))
+                .andExpect(jsonPath("$.failed").value(1))
+                .andExpect(jsonPath("$.rows[0].status").value("FAILED"))
+                .andExpect(jsonPath("$.rows[0].message").value("Translation is required"));
+
+        assertThat(wordRepository.existsByWordIgnoreCase("untranslated")).isFalse();
+        assertThat(wordEnrichmentJobRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void commitPersistsDictionaryEnrichedFieldsFromImportRows() throws Exception {
+        mockMvc.perform(post("/api/import/words/commit")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json(Map.of(
+                                "sourceType", "PASTE",
+                                "rows", List.of(Map.of(
+                                        "clientRowId", "r1",
+                                        "word", "meticulous",
+                                        "translation", "showing great attention to detail",
+                                        "example", "She kept meticulous records.",
+                                        "pronunciation", "/məˈtɪkjʊləs/",
+                                        "partOfSpeech", "adjective",
+                                        "audioUrl", "https://audio.example/meticulous.mp3",
+                                        "difficulty", "ADVANCED"
+                                ))
+                        ))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.created").value(1))
+                .andExpect(jsonPath("$.rows[0].enrichmentStatus").value("PENDING"));
+
+        Word word = wordRepository.findByWordIgnoreCase("meticulous").orElseThrow();
+        assertThat(word.getTranslation()).isEqualTo("showing great attention to detail");
+        assertThat(word.getExample()).isEqualTo("She kept meticulous records.");
+        assertThat(word.getPronunciation()).isEqualTo("/məˈtɪkjʊləs/");
+        assertThat(word.getPartOfSpeech()).isEqualTo("adjective");
+        assertThat(word.getAudioUrl()).isEqualTo("https://audio.example/meticulous.mp3");
+        assertThat(wordEnrichmentJobRepository.findAll()).hasSize(1);
+    }
+
+    @Test
     void jobDetailReturnsPersistedRowStatuses() throws Exception {
         String body = mockMvc.perform(post("/api/import/words/commit")
                         .contentType(MediaType.APPLICATION_JSON)

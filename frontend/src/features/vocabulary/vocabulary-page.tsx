@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import {
   IconBooks,
   IconEdit,
+  IconPhotoOff,
   IconPlus,
   IconSearch,
   IconSparkles,
@@ -17,7 +18,8 @@ import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import type { DifficultyLevel, PageResponse, Topic, Word } from "@/types/api";
 
-const WORD_PAGE_SIZE = 20;
+const INITIAL_WORD_COUNT = 20;
+const SCROLL_WORD_BATCH_SIZE = 16;
 
 const emptyWord: Partial<Word> = {
   word: "",
@@ -67,12 +69,49 @@ function EnrichmentPill({ status }: { status?: string }) {
   );
 }
 
-function normalizeWordPage(payload: PageResponse<Word> | Word[] | undefined, page: number): PageResponse<Word> {
+function WordImage({ word }: { word: Word }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = word.imageUrl && !failed;
+
+  useEffect(() => {
+    setFailed(false);
+  }, [word.imageUrl]);
+
+  if (showImage) {
+    return (
+      <img
+        src={word.imageUrl}
+        alt={word.word}
+        loading="lazy"
+        onError={() => setFailed(true)}
+        className="aspect-video w-full rounded-lg border border-border bg-muted object-cover"
+      />
+    );
+  }
+
+  return (
+    <div
+      aria-label={`${word.word} image placeholder`}
+      className="flex aspect-video w-full flex-col items-center justify-center gap-2 rounded-lg border border-border bg-[linear-gradient(135deg,#e0f2fe_0%,#fef3c7_52%,#dcfce7_100%)] text-center text-primary"
+    >
+      <IconPhotoOff className="h-8 w-8 opacity-75" strokeWidth={1.8} />
+      <span className="max-w-[85%] truncate font-display text-[0.78rem] font-bold uppercase tracking-[0.04em] text-foreground/70">
+        {word.word}
+      </span>
+    </div>
+  );
+}
+
+function normalizeWordPage(
+  payload: PageResponse<Word> | Word[] | undefined,
+  offset: number,
+  size: number
+): PageResponse<Word> {
   if (!payload) {
     return {
       content: [],
-      number: page,
-      size: WORD_PAGE_SIZE,
+      number: Math.floor(offset / size),
+      size,
       totalElements: 0,
       totalPages: 0,
       last: true
@@ -82,23 +121,22 @@ function normalizeWordPage(payload: PageResponse<Word> | Word[] | undefined, pag
   if (!Array.isArray(payload)) {
     return {
       content: payload.content ?? [],
-      number: payload.number ?? page,
-      size: payload.size ?? WORD_PAGE_SIZE,
+      number: payload.number ?? Math.floor(offset / size),
+      size: payload.size ?? size,
       totalElements: payload.totalElements ?? payload.content?.length ?? 0,
       totalPages: payload.totalPages ?? 1,
       last: payload.last ?? true
     };
   }
 
-  const start = page * WORD_PAGE_SIZE;
-  const content = payload.slice(start, start + WORD_PAGE_SIZE);
+  const content = payload.slice(offset, offset + size);
   return {
     content,
-    number: page,
-    size: WORD_PAGE_SIZE,
+    number: Math.floor(offset / size),
+    size,
     totalElements: payload.length,
-    totalPages: Math.ceil(payload.length / WORD_PAGE_SIZE),
-    last: start + WORD_PAGE_SIZE >= payload.length
+    totalPages: Math.ceil(payload.length / size),
+    last: offset + size >= payload.length
   };
 }
 
@@ -115,16 +153,14 @@ export function VocabularyPage() {
   const [editing, setEditing] = useState<Partial<Word> | null>(null);
   const [deleting, setDeleting] = useState<Word | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   const [totalWords, setTotalWords] = useState(0);
   const deferredSearch = useDeferredValue(search);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
   const requestSeqRef = useRef(0);
   const replacingRef = useRef(false);
   const loadingMoreRef = useRef(false);
   const hasMoreRef = useRef(false);
-  const pageRef = useRef(0);
+  const loadedCountRef = useRef(0);
   const { toast } = useToast();
 
   const querySearch = deferredSearch.trim();
@@ -139,33 +175,34 @@ export function VocabularyPage() {
     });
   }, []);
 
-  const loadWords = useCallback(async (nextPage: number, mode: "replace" | "append") => {
+  const loadWords = useCallback(async (offset: number, size: number, mode: "replace" | "append") => {
     const requestSeq = ++requestSeqRef.current;
     if (mode === "append") {
-      setLoadingMore(true);
       loadingMoreRef.current = true;
     } else {
       setLoading(true);
       replacingRef.current = true;
-      setLoadingMore(false);
       loadingMoreRef.current = false;
     }
 
     try {
       const wordPage = normalizeWordPage(await api.wordsPage({
-        page: nextPage,
-        size: WORD_PAGE_SIZE,
+        offset,
+        size,
         search: querySearch,
         category,
         difficulty,
         topicId,
         cefrLevel: cefr
-      }), nextPage);
+      }), offset, size);
 
       if (requestSeq !== requestSeqRef.current) return;
 
-      setWords((current) => (mode === "append" ? [...current, ...wordPage.content] : wordPage.content));
-      pageRef.current = wordPage.number;
+      setWords((current) => {
+        const nextWords = mode === "append" ? [...current, ...wordPage.content] : wordPage.content;
+        loadedCountRef.current = nextWords.length;
+        return nextWords;
+      });
       setHasMore(!wordPage.last);
       hasMoreRef.current = !wordPage.last;
       setTotalWords(wordPage.totalElements);
@@ -177,39 +214,49 @@ export function VocabularyPage() {
       if (requestSeq === requestSeqRef.current) {
         setLoading(false);
         replacingRef.current = false;
-        setLoadingMore(false);
         loadingMoreRef.current = false;
       }
     }
   }, [category, cefr, difficulty, querySearch, toast, topicId]);
 
-  const loadNextPage = useCallback(() => {
+  const loadNextBatch = useCallback(() => {
     if (replacingRef.current || loadingMoreRef.current || !hasMoreRef.current) return;
-    void loadWords(pageRef.current + 1, "append");
+    void loadWords(loadedCountRef.current, SCROLL_WORD_BATCH_SIZE, "append");
   }, [loadWords]);
 
   useEffect(() => {
     setWords([]);
-    pageRef.current = 0;
+    loadedCountRef.current = 0;
     setHasMore(false);
     hasMoreRef.current = false;
     setTotalWords(0);
-    void loadWords(0, "replace");
+    void loadWords(0, INITIAL_WORD_COUNT, "replace");
   }, [loadWords]);
 
   useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
+    let lastY = window.scrollY;
+    let frame = 0;
 
-    const observer = new IntersectionObserver((entries) => {
-      if (entries.some((entry) => entry.isIntersecting)) {
-        loadNextPage();
-      }
-    }, { rootMargin: "480px 0px" });
+    function handleScroll() {
+      if (frame) return;
+      frame = window.requestAnimationFrame(() => {
+        const currentY = window.scrollY;
+        const isScrollingDown = currentY > lastY;
+        lastY = currentY;
+        frame = 0;
 
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [loadNextPage]);
+        if (isScrollingDown) {
+          loadNextBatch();
+        }
+      });
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
+  }, [loadNextBatch]);
 
   async function saveWord(event: FormEvent) {
     event.preventDefault();
@@ -223,7 +270,7 @@ export function VocabularyPage() {
         toast("Đã thêm từ mới.", "success");
       }
       setEditing(null);
-      await loadWords(0, "replace");
+      await loadWords(0, INITIAL_WORD_COUNT, "replace");
     } catch {
       toast("Không thể lưu từ vựng. Vui lòng thử lại.", "error");
     }
@@ -235,7 +282,7 @@ export function VocabularyPage() {
       await api.deleteWord(deleting.id);
       setDeleting(null);
       toast("Đã xóa từ vựng.", "success");
-      await loadWords(0, "replace");
+      await loadWords(0, INITIAL_WORD_COUNT, "replace");
     } catch {
       toast("Không thể xóa từ vựng. Vui lòng thử lại.", "error");
     }
@@ -245,7 +292,7 @@ export function VocabularyPage() {
     try {
       await api.enrichWord(id);
       toast("Enrichment queued.", "success");
-      await loadWords(0, "replace");
+      await loadWords(0, INITIAL_WORD_COUNT, "replace");
     } catch {
       toast("Không thể enrich từ này.", "error");
     }
@@ -358,14 +405,7 @@ export function VocabularyPage() {
               key={word.id}
               className="flex flex-col gap-2 rounded-xl border-2 border-border bg-white p-5 transition-[border-color,box-shadow] hover:border-primary hover:shadow-[0_2px_8px_rgba(0,101,144,0.12)]"
             >
-              {word.imageUrl ? (
-                <img
-                  src={word.imageUrl}
-                  alt={word.word}
-                  loading="lazy"
-                  className="aspect-video w-full rounded-lg border border-border bg-muted object-cover"
-                />
-              ) : null}
+              <WordImage word={word} />
 
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
@@ -421,8 +461,10 @@ export function VocabularyPage() {
                 >
                   <IconEdit className="h-[15px] w-[15px]" /> Edit
                 </button>
-                {!word.enrichmentStatus ||
+                {!word.imageUrl ||
+                !word.enrichmentStatus ||
                 word.enrichmentStatus === "NOT_REQUESTED" ||
+                word.enrichmentStatus === "PARTIAL" ||
                 word.enrichmentStatus === "FAILED" ? (
                   <button
                     type="button"
@@ -447,14 +489,9 @@ export function VocabularyPage() {
 
       {words.length ? (
         <div
-          ref={sentinelRef}
           className="flex h-16 items-center justify-center font-display text-[0.78rem] font-bold uppercase tracking-[0.04em] text-muted-foreground"
         >
-          {loadingMore
-            ? "Loading more words..."
-            : hasMore
-              ? `${words.length} / ${totalWords} loaded`
-              : "All words loaded"}
+          {hasMore ? `${words.length} / ${totalWords} loaded` : "All words loaded"}
         </div>
       ) : null}
 

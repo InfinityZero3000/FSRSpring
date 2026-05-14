@@ -29,8 +29,11 @@ public class WordController {
             @RequestParam(required = false) com.fsrspring.vocab.model.CefrLevel cefrLevel,
             @RequestParam(required = false) String partOfSpeech,
             @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer offset,
             @RequestParam(required = false) Integer size) {
-        if (page != null || size != null) {
+        if (page != null || offset != null || size != null) {
+            int responseSize = size == null ? 20 : size;
+            int responseOffset = offset == null ? (page == null ? 0 : page * responseSize) : offset;
             Page<Word> wordPage = wordService.getWordsPage(
                     category,
                     difficulty,
@@ -38,8 +41,8 @@ public class WordController {
                     topicId,
                     cefrLevel,
                     partOfSpeech,
-                    page == null ? 0 : page,
-                    size == null ? 20 : size);
+                    responseOffset,
+                    responseSize);
             return ResponseEntity.ok(new WordPageResponse(
                     wordPage.getContent(),
                     wordPage.getNumber(),

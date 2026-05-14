@@ -6,7 +6,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface TrustedFlashcardRepository extends JpaRepository<TrustedFlashcard, Long> {
@@ -16,8 +15,10 @@ public interface TrustedFlashcardRepository extends JpaRepository<TrustedFlashca
 
     List<TrustedFlashcard> findTop100ByOrderByImportedAtDesc();
 
-    Optional<TrustedFlashcard> findBySourceNameIgnoreCaseAndTopicIgnoreCaseAndWordIgnoreCase(
+    List<TrustedFlashcard> findBySourceNameIgnoreCaseAndTopicIgnoreCaseAndWordIgnoreCaseOrderByImportedAtDesc(
             String sourceName,
             String topic,
             String word);
+
+    boolean existsByWordIgnoreCase(String word);
 }

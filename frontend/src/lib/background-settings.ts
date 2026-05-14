@@ -14,10 +14,11 @@ export const BACKGROUND_CHANGE_EVENT = "fsrspring:background-change";
 
 export const backgroundOptions: BackgroundOption[] = Array.from({ length: 15 }, (_, index) => {
   const id = String(index + 1);
+  const optimizedExtension = id === "15" ? "png" : "jpg";
   return {
     id,
     name: `Landscape ${id}`,
-    url: `${BACKGROUND_BASE_URL}/optimized/${id}.jpg`,
+    url: `${BACKGROUND_BASE_URL}/optimized/${id}.${optimizedExtension}`,
     previewUrl: `${BACKGROUND_BASE_URL}/thumbs/${id}.jpg`,
     originalUrl: `${BACKGROUND_BASE_URL}/${id}.png`
   };

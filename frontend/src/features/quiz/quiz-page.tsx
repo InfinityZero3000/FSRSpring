@@ -4,6 +4,7 @@ import { IconArrowLeft, IconCircleCheck, IconCircleX, IconPlayerPlay, IconPuzzle
 import { useEffect, useMemo, useRef, useState } from "react";
 import { AppShellLoading } from "@/components/layout/app-shell";
 import { Select } from "@/components/ui/select";
+import { useToast } from "@/components/ui/toast";
 import { api } from "@/lib/api";
 import type { Topic, Word } from "@/types/api";
 
@@ -53,6 +54,8 @@ export function QuizPage() {
   const [correctCount, setCorrectCount] = useState(0);
   const [incorrectCount, setIncorrectCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [starting, setStarting] = useState(false);
+  const { toast } = useToast();
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
@@ -85,8 +88,14 @@ export function QuizPage() {
   }, [current, words, quizType, correctAnswer]);
 
   async function start() {
+    if (starting) return;
+    setStarting(true);
     try {
       const data = await api.startQuiz({ count, category, difficulty, topicId: topicId ?? undefined, cefrLevel: cefr || undefined });
+      if (!data.words.length) {
+        toast("Không có từ phù hợp với bộ lọc quiz này.", "warning");
+        return;
+      }
       setSessionId(data.sessionId);
       setWords(data.words);
       setIndex(0);
@@ -95,7 +104,9 @@ export function QuizPage() {
       setIncorrectCount(0);
       setScreen("playing");
     } catch {
-      /* no-op */
+      toast("Không thể bắt đầu quiz. Vui lòng thử lại.", "error");
+    } finally {
+      setStarting(false);
     }
   }
 
@@ -228,10 +239,11 @@ export function QuizPage() {
               <button
                 type="button"
                 onClick={start}
+                disabled={starting}
                 className="btn-press mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3 font-display text-[17px] font-bold uppercase tracking-[0.02em] text-primary-foreground"
               >
                 <IconPlayerPlay className="h-5 w-5" />
-                Start Quiz
+                {starting ? "Starting..." : "Start Quiz"}
               </button>
             </div>
           </div>

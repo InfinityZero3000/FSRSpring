@@ -37,7 +37,7 @@ public class ImportService {
         }
         List<ImportCommitRequest.Row> requestRows =
                 request.getRows() != null ? request.getRows() : List.of();
-        VocabularySet targetSet = resolveTargetSet(request.getTargetSet());
+        VocabularySet targetSet = resolveTargetSet(request);
 
         ImportJob job = ImportJob.builder()
                 .sourceType(blankToDefault(request.getSourceType(), "UNKNOWN"))
@@ -162,13 +162,19 @@ public class ImportService {
         return outcome(jobRow, clientRowId, wordText, ImportJobRow.Status.CREATED, saved.getId(), enrichmentStatus, message);
     }
 
-    private VocabularySet resolveTargetSet(ImportCommitRequest.TargetSet targetSetRequest) {
+    private VocabularySet resolveTargetSet(ImportCommitRequest request) {
+        ImportCommitRequest.TargetSet targetSetRequest = request.getTargetSet();
+        if (targetSetRequest == null && clean(request.getTargetSetName()) != null) {
+            targetSetRequest = new ImportCommitRequest.TargetSet();
+            targetSetRequest.setName(request.getTargetSetName());
+        }
         if (targetSetRequest == null) {
             return null;
         }
         if (targetSetRequest.getId() != null) {
-            VocabularySet set = vocabularySetRepository.findById(targetSetRequest.getId())
-                    .orElseThrow(() -> new IllegalArgumentException("Target set not found: " + targetSetRequest.getId()));
+            Long targetSetId = targetSetRequest.getId();
+            VocabularySet set = vocabularySetRepository.findById(targetSetId)
+                    .orElseThrow(() -> new IllegalArgumentException("Target set not found: " + targetSetId));
             ensureSetWords(set);
             return set;
         }

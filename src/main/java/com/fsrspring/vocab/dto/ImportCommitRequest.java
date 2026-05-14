@@ -14,6 +14,7 @@ public class ImportCommitRequest {
     private String sourceType;
     private String fileName;
     private TargetSet targetSet;
+    private String targetSetName;
     private Map<String, Object> options;
     private List<Row> rows = new ArrayList<>();
 

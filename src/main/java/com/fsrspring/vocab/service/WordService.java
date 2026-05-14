@@ -5,7 +5,7 @@ import com.fsrspring.vocab.repository.WordRepository;
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -34,12 +34,75 @@ public class WordService {
             Long topicId,
             com.fsrspring.vocab.model.CefrLevel cefrLevel,
             String partOfSpeech,
-            int page,
+            int offset,
             int size) {
-        int safePage = Math.max(0, page);
+        int safeOffset = Math.max(0, offset);
         int safeSize = Math.max(1, Math.min(size, 100));
-        PageRequest pageRequest = PageRequest.of(safePage, safeSize, Sort.by("id").ascending());
+        Pageable pageRequest = new OffsetLimitPageable(safeOffset, safeSize, Sort.by("id").ascending());
         return wordRepository.findAll(wordSpecification(category, difficulty, search, topicId, cefrLevel, partOfSpeech), pageRequest);
+    }
+
+    private record OffsetLimitPageable(int offset, int pageSize, Sort sort) implements Pageable {
+        private OffsetLimitPageable {
+            if (offset < 0) {
+                throw new IllegalArgumentException("Offset must not be negative");
+            }
+            if (pageSize < 1) {
+                throw new IllegalArgumentException("Page size must be greater than zero");
+            }
+            if (sort == null) {
+                sort = Sort.unsorted();
+            }
+        }
+
+        @Override
+        public int getPageNumber() {
+            return offset / pageSize;
+        }
+
+        @Override
+        public int getPageSize() {
+            return pageSize;
+        }
+
+        @Override
+        public long getOffset() {
+            return offset;
+        }
+
+        @Override
+        public Sort getSort() {
+            return sort;
+        }
+
+        @Override
+        public Pageable next() {
+            return new OffsetLimitPageable(offset + pageSize, pageSize, sort);
+        }
+
+        @Override
+        public Pageable previousOrFirst() {
+            if (!hasPrevious()) return first();
+            return new OffsetLimitPageable(Math.max(offset - pageSize, 0), pageSize, sort);
+        }
+
+        @Override
+        public Pageable first() {
+            return new OffsetLimitPageable(0, pageSize, sort);
+        }
+
+        @Override
+        public Pageable withPage(int pageNumber) {
+            if (pageNumber < 0) {
+                throw new IllegalArgumentException("Page index must not be negative");
+            }
+            return new OffsetLimitPageable(pageNumber * pageSize, pageSize, sort);
+        }
+
+        @Override
+        public boolean hasPrevious() {
+            return offset > 0;
+        }
     }
 
     private Specification<Word> wordSpecification(

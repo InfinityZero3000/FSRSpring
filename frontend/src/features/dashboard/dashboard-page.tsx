@@ -13,7 +13,7 @@ import { formatPercent, masteryLabel } from "@/lib/utils";
 import type { NotificationItem, UserProgress, Word } from "@/types/api";
 
 export function DashboardPage() {
-  const [stats, setStats] = useState({ totalWords: 0, mastered: 0, learning: 0, accuracy: 0, dueNow: 0, retention: 0, streak: 0 });
+  const [stats, setStats] = useState({ totalWords: 0, mastered: 0, learning: 0, dueNow: 0, retention: 0, streak: 0 });
   const [wordOfDay, setWordOfDay] = useState<Word | null>(null);
   const [review, setReview] = useState<UserProgress[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
@@ -37,7 +37,6 @@ export function DashboardPage() {
         totalWords: count.count ?? 0,
         mastered: progressStats.mastered ?? 0,
         learning: progressStats.learning ?? 0,
-        accuracy: progressStats.accuracy ?? 0,
         dueNow: fsrsStats.dueNow ?? progressStats.dueNow ?? 0,
         retention: fsrsStats.retentionEstimate ?? 0,
         streak: streak.currentStreak ?? 0
@@ -51,7 +50,8 @@ export function DashboardPage() {
     load().catch(() => setLoading(false));
   }, []);
 
-  const totalTracked = Math.max(stats.mastered + stats.learning, 1);
+  const newWords = Math.max(stats.totalWords - stats.mastered - stats.learning, 0);
+  const masteryTotal = Math.max(stats.totalWords, 1);
 
   if (loading) return <AppShellLoading label="Loading dashboard..." />;
 
@@ -89,7 +89,7 @@ export function DashboardPage() {
             <CardHeader>
               <CardTitle>Quick Actions</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="grid gap-3 sm:grid-cols-2">
               <Action href="/flashcards" icon={<navigationIcons.flashcards />} iconBox="bg-accent text-primary" title="Flashcard Review" sub="FSRS-powered spaced repetition" />
               <Action href="/quiz" icon={<navigationIcons.quiz />} iconBox="bg-secondary/40 text-secondary-foreground" title="Multiple Choice Quiz" sub="Test your knowledge" />
               <Action href="/vocabulary" icon={<navigationIcons.words />} iconBox="bg-muted text-foreground" title="Browse Words" sub="Manage your vocabulary list" />
@@ -105,19 +105,15 @@ export function DashboardPage() {
             <CardContent className="space-y-5">
               <div>
                 <div className="mb-2 flex justify-between font-display text-sm font-bold uppercase tracking-[0.05em]"><span>Mastered</span><span className="text-primary">{stats.mastered}</span></div>
-                <Progress value={(stats.mastered / totalTracked) * 100} />
+                <Progress value={(stats.mastered / masteryTotal) * 100} />
               </div>
               <div>
                 <div className="mb-2 flex justify-between font-display text-sm font-bold uppercase tracking-[0.05em]"><span>Learning</span><span className="text-secondary">{stats.learning}</span></div>
-                <Progress value={(stats.learning / totalTracked) * 100} />
+                <Progress value={(stats.learning / masteryTotal) * 100} />
               </div>
               <div>
-                <div className="mb-2 flex justify-between font-display text-sm font-bold uppercase tracking-[0.05em]"><span>New</span><span className="text-muted-foreground">{Math.max(stats.totalWords - stats.mastered - stats.learning, 0)}</span></div>
-                <Progress value={0} />
-              </div>
-              <div className="flex justify-between border-t-2 pt-4 text-sm font-medium text-muted-foreground">
-                <span>Accuracy</span>
-                <span className="font-display font-bold text-foreground">{formatPercent(stats.accuracy)}</span>
+                <div className="mb-2 flex justify-between font-display text-sm font-bold uppercase tracking-[0.05em]"><span>New</span><span className="text-muted-foreground">{newWords}</span></div>
+                <Progress value={(newWords / masteryTotal) * 100} />
               </div>
             </CardContent>
           </Card>
@@ -188,13 +184,15 @@ function Metric({ href, icon, color, label, value, sub }: { href: string; icon: 
 
 function Action({ href, icon, iconBox, title, sub }: { href: string; icon: React.ReactNode; iconBox: string; title: string; sub: string }) {
   return (
-    <Link href={href} className="flex items-center gap-5 rounded-xl p-3 transition hover:bg-muted">
-      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl [&>svg]:h-6 [&>svg]:w-6 [&>svg]:stroke-[2] ${iconBox}`}>{icon}</span>
-      <span>
-        <span className="block font-display font-bold uppercase">{title}</span>
-        <span className="text-sm font-medium text-muted-foreground">{sub}</span>
+    <Link href={href} className="flex min-h-[132px] flex-col justify-between rounded-xl border-2 border-transparent bg-muted/40 p-4 transition hover:border-primary hover:bg-muted">
+      <span className="flex items-start justify-between gap-3">
+        <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl [&>svg]:h-6 [&>svg]:w-6 [&>svg]:stroke-[2] ${iconBox}`}>{icon}</span>
+        <IconChevronRight className="h-5 w-5 text-muted-foreground" />
       </span>
-      <IconChevronRight className="ml-auto h-5 w-5 text-muted-foreground" />
+      <span className="mt-4 block">
+        <span className="block font-display text-[0.95rem] font-bold uppercase leading-tight">{title}</span>
+        <span className="mt-1 block text-sm font-medium leading-snug text-muted-foreground">{sub}</span>
+      </span>
     </Link>
   );
 }

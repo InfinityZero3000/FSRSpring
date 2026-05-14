@@ -37,6 +37,8 @@ services:
         condition: service_started
       libretranslate:
         condition: service_started
+    volumes:
+      - app_generated_images:/app/data/enrichment-images
     restart: unless-stopped
 
   mysql:
@@ -75,5 +77,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  app_generated_images:
   redis_data:
   mysql_data:

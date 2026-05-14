@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/toast";
-import { api } from "@/lib/api";
+import { ApiError, api } from "@/lib/api";
 import type { TrustedFlashcard, UserProgress } from "@/types/api";
 
 const ratings = [
@@ -71,11 +71,11 @@ export function FlashcardsPage() {
   async function importTrusted() {
     if (importing) return;
     setImporting(true);
+    setTrusted([]);
     try {
-      const cards = await api.importFlashcards("BBC Learning English", search || "general");
-      setTrusted(uniqueTrustedCards(cards));
-      toast("Trusted flashcards imported.", "success");
-      await load();
+      const cards = uniqueTrustedCards(await api.importFlashcards("Datamuse + Free Dictionary", search || "vocabulary"));
+      setTrusted(cards);
+      toast(cards.length ? "Trusted flashcards imported." : "Không có flashcard mới từ API ngoài.", cards.length ? "success" : "warning");
     } catch {
       toast("Không thể import flashcards.", "error");
     } finally {
@@ -94,8 +94,11 @@ export function FlashcardsPage() {
       setDue(dueWords);
       setIndex(0);
       setFlipped(false);
-    } catch {
-      toast("Không thể lưu flashcard.", "error");
+    } catch (error) {
+      const message = error instanceof ApiError && error.status === 401
+        ? "Bạn cần đăng nhập để lưu flashcard vào vocab."
+        : "Không thể lưu flashcard.";
+      toast(message, "error");
     } finally {
       setSavingId(null);
     }

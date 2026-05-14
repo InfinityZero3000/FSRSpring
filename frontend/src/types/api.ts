@@ -89,6 +89,7 @@ export interface ImportRow {
   cefrLevel?: CefrLevel | "";
   partOfSpeech?: string;
   example?: string;
+  audioUrl?: string;
   topicId?: number | null;
 }
 
