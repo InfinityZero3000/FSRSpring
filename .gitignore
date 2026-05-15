@@ -82,3 +82,4 @@ scripts/*
 !scripts/*mvnw
 !scripts/*mvnw.cmd
 client_secret*
+.vercel
