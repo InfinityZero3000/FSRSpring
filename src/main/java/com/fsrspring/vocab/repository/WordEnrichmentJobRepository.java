@@ -16,6 +16,8 @@ public interface WordEnrichmentJobRepository extends JpaRepository<WordEnrichmen
 
     Optional<WordEnrichmentJob> findTopByWordIdOrderByCreatedAtDesc(Long wordId);
 
+    List<WordEnrichmentJob> findByWord(Word word);
+
     @EntityGraph(attributePaths = "word")
     List<WordEnrichmentJob> findTop10ByStatusAndNextRunAtLessThanEqualOrderByCreatedAtAsc(
             WordEnrichmentJob.Status status,

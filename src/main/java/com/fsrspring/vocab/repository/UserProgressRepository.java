@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +29,9 @@ public interface UserProgressRepository extends JpaRepository<UserProgress, Long
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"word"})
     List<UserProgress> findByUser(AppUser user);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"word", "user"})
+    List<UserProgress> findAllByWordIn(Collection<Word> words);
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"word"})
     List<UserProgress> findByMastery(UserProgress.MasteryLevel mastery);

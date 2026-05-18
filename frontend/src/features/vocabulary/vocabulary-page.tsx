@@ -146,16 +146,20 @@ export function VocabularyPage() {
   const [categories, setCategories] = useState<string[]>([]);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [search, setSearch] = useState("");
+  const [querySearch, setQuerySearch] = useState("");
+  const [suggestedWords, setSuggestedWords] = useState<Word[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  
   const [category, setCategory] = useState(params.get("category") || "");
   const [difficulty, setDifficulty] = useState("");
   const [topicId, setTopicId] = useState("");
   const [cefr, setCefr] = useState("");
   const [editing, setEditing] = useState<Partial<Word> | null>(null);
   const [deleting, setDeleting] = useState<Word | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [totalWords, setTotalWords] = useState(0);
-  const deferredSearch = useDeferredValue(search);
+
   const requestSeqRef = useRef(0);
   const replacingRef = useRef(false);
   const loadingMoreRef = useRef(false);
@@ -163,7 +167,36 @@ export function VocabularyPage() {
   const loadedCountRef = useRef(0);
   const { toast } = useToast();
 
-  const querySearch = deferredSearch.trim();
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuerySearch(search.trim());
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  useEffect(() => {
+    if (!search.trim()) {
+      setSuggestedWords([]);
+      setShowSuggestions(false);
+      return;
+    }
+    let ignore = false;
+    const t = setTimeout(() => {
+      api.wordsPage({ search: search.trim(), size: 5 })
+        .then((res) => {
+          if (!ignore) {
+            const normalized = normalizeWordPage(res, 0, 5);
+            setSuggestedWords(normalized.content);
+            setShowSuggestions(true);
+          }
+        })
+        .catch(() => {});
+    }, 300);
+    return () => {
+      ignore = true;
+      clearTimeout(t);
+    };
+  }, [search]);
 
   useEffect(() => {
     Promise.all([
@@ -180,7 +213,6 @@ export function VocabularyPage() {
     if (mode === "append") {
       loadingMoreRef.current = true;
     } else {
-      setLoading(true);
       replacingRef.current = true;
       loadingMoreRef.current = false;
     }
@@ -212,7 +244,7 @@ export function VocabularyPage() {
       }
     } finally {
       if (requestSeq === requestSeqRef.current) {
-        setLoading(false);
+        setInitialLoading(false);
         replacingRef.current = false;
         loadingMoreRef.current = false;
       }
@@ -298,7 +330,7 @@ export function VocabularyPage() {
     }
   }
 
-  if (loading) return <AppShellLoading label="Loading vocabulary..." />;
+  if (initialLoading) return <AppShellLoading label="Loading vocabulary..." />;
 
   return (
     <>
@@ -312,16 +344,45 @@ export function VocabularyPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <label className="relative flex-1 md:w-72">
+            <div className="relative flex-1 md:w-72">
               <IconSearch className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
               <input
                 type="search"
                 placeholder="Search words..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
+                onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                onFocus={() => {
+                  if (suggestedWords.length > 0) setShowSuggestions(true);
+                }}
                 className="h-11 w-full rounded-full border-2 border-transparent bg-white pl-10 pr-4 font-body text-[17px] font-medium text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary"
               />
-            </label>
+              {showSuggestions && suggestedWords.length > 0 && (
+                <div className="absolute left-0 mt-2 w-full overflow-hidden rounded-xl border border-border bg-white shadow-xl z-50">
+                  <div className="max-h-60 overflow-y-auto py-2">
+                    {suggestedWords.map((word) => (
+                      <button
+                        key={word.id}
+                        type="button"
+                        className="flex w-full flex-col px-4 py-2 text-left hover:bg-muted focus:bg-muted focus:outline-none"
+                        onClick={() => {
+                          setSearch(word.word);
+                          setQuerySearch(word.word);
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        <span className="font-display font-bold text-foreground">{word.word}</span>
+                        {word.translation && (
+                          <span className="truncate font-body text-[13px] text-muted-foreground">
+                            {word.translation}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
             <button
               type="button"
               onClick={() => setEditing(emptyWord)}
