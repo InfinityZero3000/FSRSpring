@@ -3,8 +3,11 @@ package com.fsrspring.vocab.security;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.util.SerializationUtils;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
@@ -27,7 +30,6 @@ public class CookieUtils {
         cookie.setHttpOnly(true);
         cookie.setMaxAge(maxAge);
         cookie.setSecure(true);
-        // SameSite=None required: cookie phải được gửi khi Google redirect về (cross-site navigation)
         cookie.setAttribute("SameSite", "None");
         response.addCookie(cookie);
     }
@@ -49,13 +51,25 @@ public class CookieUtils {
     }
 
     public static String serialize(Object object) {
-        return Base64.getUrlEncoder().withoutPadding()
-                .encodeToString(SerializationUtils.serialize(object));
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(object);
+            return Base64.getUrlEncoder().withoutPadding().encodeToString(baos.toByteArray());
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot serialize object", e);
+        }
     }
 
     @SuppressWarnings("unchecked")
     public static <T> T deserialize(Cookie cookie, Class<T> cls) {
-        return cls.cast(SerializationUtils.deserialize(
-                Base64.getUrlDecoder().decode(cookie.getValue())));
+        try {
+            byte[] decoded = Base64.getUrlDecoder().decode(cookie.getValue());
+            ByteArrayInputStream bais = new ByteArrayInputStream(decoded);
+            ObjectInputStream ois = new ObjectInputStream(bais);
+            return cls.cast(ois.readObject());
+        } catch (Exception e) {
+            throw new RuntimeException("Cannot deserialize object from cookie", e);
+        }
     }
 }
