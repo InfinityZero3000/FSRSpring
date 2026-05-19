@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -28,6 +29,8 @@ public interface WordEnrichmentJobRepository extends JpaRepository<WordEnrichmen
     );
 
     @Modifying
-    @Query("UPDATE WordEnrichmentJob j SET j.status = com.fsrspring.vocab.model.WordEnrichmentJob.Status.PENDING, j.nextRunAt = :now WHERE j.status = com.fsrspring.vocab.model.WordEnrichmentJob.Status.RUNNING")
-    int resetRunningJobsToPending(LocalDateTime now);
+    @Query("UPDATE WordEnrichmentJob j SET j.status = :pending, j.nextRunAt = :now WHERE j.status = :running")
+    int resetRunningJobsToPending(@Param("now") LocalDateTime now,
+                                  @Param("pending") WordEnrichmentJob.Status pending,
+                                  @Param("running") WordEnrichmentJob.Status running);
 }

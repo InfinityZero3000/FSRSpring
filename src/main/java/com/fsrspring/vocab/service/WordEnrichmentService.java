@@ -50,7 +50,10 @@ public class WordEnrichmentService {
      */
     @Transactional
     public int resetStuckJobs() {
-        int count = enrichmentJobRepository.resetRunningJobsToPending(LocalDateTime.now());
+        int count = enrichmentJobRepository.resetRunningJobsToPending(
+                LocalDateTime.now(),
+                com.fsrspring.vocab.model.WordEnrichmentJob.Status.PENDING,
+                com.fsrspring.vocab.model.WordEnrichmentJob.Status.RUNNING);
         if (count > 0) {
             log.info("Reset {} stuck RUNNING enrichment jobs back to PENDING", count);
         }
