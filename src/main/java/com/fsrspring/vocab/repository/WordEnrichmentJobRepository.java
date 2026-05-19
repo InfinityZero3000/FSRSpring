@@ -1,6 +1,7 @@
 package com.fsrspring.vocab.repository;
 
 import com.fsrspring.vocab.model.WordEnrichmentJob;
+import com.fsrspring.vocab.model.Word;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
