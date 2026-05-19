@@ -70,8 +70,8 @@ class NotificationServiceTests {
         assertThat(mailCaptor.getAllValues())
                 .extracting(message -> message.getTo()[0], SimpleMailMessage::getText)
                 .containsExactlyInAnyOrder(
-                        org.assertj.core.groups.Tuple.tuple("alice@example.com", "You have 2 vocabulary cards due for review.\n\nOpen: http://localhost:8080/learn?mode=fsrs"),
-                        org.assertj.core.groups.Tuple.tuple("bob@example.com", "You have 1 vocabulary cards due for review.\n\nOpen: http://localhost:8080/learn?mode=fsrs")
+                        org.assertj.core.groups.Tuple.tuple("alice@example.com", "You have 2 vocabulary cards due for review.\n\nOpen: http://localhost:8080/flashcards"),
+                        org.assertj.core.groups.Tuple.tuple("bob@example.com", "You have 1 vocabulary cards due for review.\n\nOpen: http://localhost:8080/flashcards")
                 );
     }
 }
