@@ -92,12 +92,19 @@ export function QuizPage() {
     setStarting(true);
     try {
       const data = await api.startQuiz({ count, category, difficulty, topicId: topicId ?? undefined, cefrLevel: cefr || undefined });
-      if (!data.words.length) {
+      // Filter out words that don't have enough data for the chosen type
+      const validWords = data.words.filter((w: Word) => {
+        if (quizType === "en-vi") return w.translation && w.translation.trim().length > 0;
+        return w.word && w.word.trim().length > 0;
+      });
+
+      if (!validWords.length) {
         toast("Không có từ phù hợp với bộ lọc quiz này.", "warning");
         return;
       }
+
       setSessionId(data.sessionId);
-      setWords(data.words);
+      setWords(validWords);
       setIndex(0);
       setSelected(null);
       setCorrectCount(0);
@@ -117,7 +124,7 @@ export function QuizPage() {
     if (isCorrect) setCorrectCount((v) => v + 1);
     else setIncorrectCount((v) => v + 1);
     await api.submitQuizAnswer(sessionId, current.id, isCorrect);
-    await api.reviewWord(current.id, isCorrect ? 3 : 1, 0).catch(() => undefined);
+    // Removed duplicate api.reviewWord call as backend does it implicitly.
 
     const nextIndex = index + 1;
     timerRef.current = setTimeout(async () => {
@@ -437,7 +444,7 @@ export function QuizPage() {
                   isCorrectAnswer ? "text-accent-foreground" : "text-destructive"
                 }`}
               >
-                {isCorrectAnswer ? "Correct!" : `Correct answer: ${correctAnswer}`}
+                {isCorrectAnswer ? "Correct!" : `Incorrect. Answer: ${correctAnswer}`}
               </p>
             </div>
             <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-black/10">

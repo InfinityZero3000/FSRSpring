@@ -39,6 +39,7 @@ public class WordEnrichmentService {
     private final DictionaryApiService dictionaryApiService;
     private final DatamuseApiService datamuseApiService;
     private final WordImageService wordImageService;
+    private final ImageStorageService imageStorageService;
 
     @Autowired @Lazy
     private WordEnrichmentService self;
@@ -197,7 +198,7 @@ public class WordEnrichmentService {
         int count = 0;
         for (Word word : words) {
             boolean missing = blank(word.getTranslation()) || blank(word.getAudioUrl()) || blank(word.getPronunciation())
-                    || blank(word.getSynonyms()) || blank(word.getPartOfSpeech()) || blank(word.getImageUrl());
+                    || blank(word.getSynonyms()) || blank(word.getPartOfSpeech()) || !hasUsableImage(word);
             if (missing) {
                 try {
                     enqueueWord(word.getId());
@@ -251,7 +252,7 @@ public class WordEnrichmentService {
     }
 
     private void applyImage(Word word, EnrichmentMerge merge, List<String> warnings, ObjectNode raw) {
-        if (!blank(word.getImageUrl())) {
+        if (hasUsableImage(word)) {
             return;
         }
         try {
@@ -263,6 +264,10 @@ public class WordEnrichmentService {
         } catch (Exception e) {
             warnings.add("image: " + e.getMessage());
         }
+    }
+
+    private boolean hasUsableImage(Word word) {
+        return !blank(word.getImageUrl()) && imageStorageService.canServe(word.getImageUrl());
     }
 
     private WordEnrichmentJob.Status finalStatus(boolean changed, List<String> warnings) {
@@ -382,7 +387,7 @@ public class WordEnrichmentService {
         }
 
         void setImageUrl(String value) {
-            if (blank(word.getImageUrl()) && !blank(value)) {
+            if (!blank(value) && !value.equals(word.getImageUrl())) {
                 word.setImageUrl(value);
                 changed = true;
             }

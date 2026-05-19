@@ -140,6 +140,74 @@ function normalizeWordPage(
   };
 }
 
+function WordDetail3DModal({ word, onClose }: { word: Word | null, onClose: () => void }) {
+  if (!word) return null;
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/40 p-4 xl:p-8 backdrop-blur-sm transition-opacity" onClick={onClose}>
+      <div 
+        className="group relative w-full max-w-[380px] animate-in fade-in zoom-in-95 duration-300"
+        style={{ perspective: "1000px" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div 
+          className="relative transition-all duration-300 ease-out"
+          style={{ transformStyle: "preserve-3d" }}
+          onMouseMove={(e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            const rotateX = ((y - centerY) / centerY) * -10;
+            const rotateY = ((x - centerX) / centerX) * 10;
+            e.currentTarget.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
+          }}
+        >
+          {/* Shadow layer behind */}
+          <div className="absolute inset-0 rounded-2xl bg-black/20 blur-xl transition-all duration-300" style={{ transform: "translateZ(-30px) translateY(10px)" }}></div>
+          
+          <div className="relative flex flex-col gap-4 overflow-hidden rounded-2xl border-4 border-white bg-white p-6 shadow-2xl transition-colors" style={{ transform: "translateZ(20px)" }}>
+            <WordImage word={word} />
+            <div className="flex flex-col gap-1">
+              <div className="flex items-start justify-between gap-2">
+                <h2 className="font-display text-2xl font-bold text-foreground">{word.word}</h2>
+                <DifficultyPill difficulty={word.difficulty} />
+              </div>
+              {word.pronunciation && (
+                <p className="font-mono text-[0.85rem] text-primary">{word.pronunciation}</p>
+              )}
+            </div>
+
+            <p className="font-body text-lg font-semibold text-muted-foreground">{word.translation}</p>
+
+            {word.example && (
+              <div className="rounded-xl bg-muted/50 p-4">
+                <p className="font-body text-[0.9rem] italic text-muted-foreground/80">&ldquo;{word.example}&rdquo;</p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {word.category && <span className="rounded-full border border-border bg-muted px-2.5 py-1 font-display text-[0.7rem] font-semibold text-muted-foreground">{word.category}</span>}
+              {word.topic && <span className="rounded-full bg-accent px-2.5 py-1 font-display text-[0.7rem] font-semibold text-accent-foreground">{word.topic.name}</span>}
+              {word.cefrLevel && <span className="rounded-full bg-secondary/40 px-2.5 py-1 font-display text-[0.7rem] font-semibold text-secondary-foreground">{word.cefrLevel}</span>}
+              {word.partOfSpeech && <span className="rounded-full border border-border px-2.5 py-1 font-display text-[0.7rem] text-muted-foreground">{word.partOfSpeech}</span>}
+            </div>
+
+            <div className="mt-2 flex justify-end">
+               <button type="button" onClick={onClose} className="btn-press rounded-xl bg-primary px-6 py-2.5 font-display text-[14px] font-bold uppercase tracking-[0.02em] text-primary-foreground">
+                 Close
+               </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function VocabularyPage() {
   const params = useSearchParams();
   const [words, setWords] = useState<Word[]>([]);
@@ -156,6 +224,7 @@ export function VocabularyPage() {
   const [cefr, setCefr] = useState("");
   const [editing, setEditing] = useState<Partial<Word> | null>(null);
   const [deleting, setDeleting] = useState<Word | null>(null);
+  const [viewingWord, setViewingWord] = useState<Word | null>(null);
   const [initialLoading, setInitialLoading] = useState(true);
   const [hasMore, setHasMore] = useState(false);
   const [totalWords, setTotalWords] = useState(0);
@@ -464,7 +533,8 @@ export function VocabularyPage() {
           {words.map((word) => (
             <div
               key={word.id}
-              className="flex flex-col gap-2 rounded-xl border-2 border-border bg-white p-5 transition-[border-color,box-shadow] hover:border-primary hover:shadow-[0_2px_8px_rgba(0,101,144,0.12)]"
+              onClick={() => setViewingWord(word)}
+              className="flex cursor-pointer flex-col gap-2 rounded-xl border-2 border-border bg-white p-5 transition-[border-color,box-shadow,transform] hover:-translate-y-1 hover:border-primary hover:shadow-[0_8px_20px_rgba(0,101,144,0.12)]"
             >
               <WordImage word={word} />
 
@@ -517,7 +587,7 @@ export function VocabularyPage() {
               <div className="mt-auto flex gap-2 border-t border-border pt-3">
                 <button
                   type="button"
-                  onClick={() => setEditing(word)}
+                  onClick={(e) => { e.stopPropagation(); setEditing(word); }}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 border-border bg-white px-3 py-2 font-display text-[0.75rem] font-bold uppercase tracking-[0.05em] text-primary transition hover:bg-accent"
                 >
                   <IconEdit className="h-[15px] w-[15px]" /> Edit
@@ -529,7 +599,7 @@ export function VocabularyPage() {
                 word.enrichmentStatus === "FAILED" ? (
                   <button
                     type="button"
-                    onClick={() => enrich(word.id)}
+                    onClick={(e) => { e.stopPropagation(); enrich(word.id); }}
                     className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 border-border bg-white px-3 py-2 font-display text-[0.75rem] font-bold uppercase tracking-[0.05em] text-secondary-foreground transition hover:bg-secondary/30"
                   >
                     <IconSparkles className="h-[15px] w-[15px]" /> Enrich
@@ -537,7 +607,7 @@ export function VocabularyPage() {
                 ) : null}
                 <button
                   type="button"
-                  onClick={() => setDeleting(word)}
+                  onClick={(e) => { e.stopPropagation(); setDeleting(word); }}
                   className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border-2 border-border bg-white px-3 py-2 font-display text-[0.75rem] font-bold uppercase tracking-[0.05em] text-destructive transition hover:bg-destructive/10"
                 >
                   <IconTrash className="h-[15px] w-[15px]" /> Delete
@@ -695,6 +765,8 @@ export function VocabularyPage() {
           </div>
         </div>
       </Dialog>
+
+      <WordDetail3DModal word={viewingWord} onClose={() => setViewingWord(null)} />
     </>
   );
 }
